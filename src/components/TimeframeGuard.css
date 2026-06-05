@@ -1,0 +1,134 @@
+.tf-guard {
+  background: #111318;
+  border: 1px solid #1e2530;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tf-guard__label {
+  font-size: 13px;
+  color: #e8eaf0;
+  font-weight: 600;
+}
+
+.tf-guard__required {
+  color: #f0b429;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.tf-guard__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tf-btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid #1e2530;
+  background: #161a22;
+  color: #7a8499;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tf-btn:hover {
+  border-color: #4a5568;
+  color: #e8eaf0;
+}
+
+/* Invalid timeframes — red tint */
+.tf-btn--invalid {
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #9ca3af;
+}
+
+.tf-btn--invalid:hover,
+.tf-btn--invalid.tf-btn--selected {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* Confirmation only — yellow tint */
+.tf-btn--confirm {
+  border-color: rgba(240, 180, 41, 0.25);
+}
+
+.tf-btn--confirm:hover,
+.tf-btn--confirm.tf-btn--selected {
+  background: rgba(240, 180, 41, 0.1);
+  border-color: #f0b429;
+  color: #f0b429;
+}
+
+/* Primary (H4, D1, W1) — green tint */
+.tf-btn--primary {
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.tf-btn--primary:hover,
+.tf-btn--primary.tf-btn--selected {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: #22c55e;
+  color: #22c55e;
+}
+
+/* Warning box */
+.tf-guard__warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.tf-guard__warning--blocked {
+  background: rgba(239, 68, 68, 0.07);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.tf-guard__warning--caution {
+  background: rgba(240, 180, 41, 0.07);
+  border: 1px solid rgba(240, 180, 41, 0.4);
+  color: #fde68a;
+}
+
+.tf-guard__warning-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.tf-guard__ok {
+  font-size: 13px;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.07);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.tf-guard__blocked-hint {
+  font-size: 12px;
+  color: #7a8499;
+  background: #0d1117;
+  border-radius: 8px;
+  padding: 10px 14px;
+  line-height: 1.65;
+  border: 1px solid #1e2530;
+}
+
+.tf-guard__blocked-hint strong {
+  color: #e8eaf0;
+}

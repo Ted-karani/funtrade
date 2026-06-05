@@ -1,0 +1,424 @@
+.trade-journal {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.trade-journal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.trade-journal__title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #e8eaf0;
+}
+
+.trade-journal__sub {
+  font-size: 12px;
+  color: #7a8499;
+  margin-top: 2px;
+}
+
+/* Stats bar */
+.journal-stats {
+  background: #111318;
+  border: 1px solid #1e2530;
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.journal-stats--empty {
+  color: #4a5568;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.journal-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 50px;
+}
+
+.journal-stat__label {
+  font-size: 10px;
+  color: #7a8499;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.journal-stat__value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e8eaf0;
+  font-family: monospace;
+}
+
+/* Psychology warning */
+.journal-psych-warning {
+  background: rgba(239, 68, 68, 0.07);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #fca5a5;
+  line-height: 1.65;
+}
+
+.journal-psych-warning strong {
+  color: #ef4444;
+}
+
+/* Add entry button */
+.journal-add-btn {
+  background: #111318;
+  border: 1px dashed #1e2530;
+  border-radius: 10px;
+  color: #7a8499;
+  padding: 12px;
+  width: 100%;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.journal-add-btn:hover {
+  border-color: #f0b429;
+  color: #f0b429;
+  background: rgba(240, 180, 41, 0.04);
+}
+
+/* Add entry form */
+.journal-add-form {
+  background: #111318;
+  border: 1px solid #f0b429;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.journal-add-form__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f0b429;
+  letter-spacing: 1px;
+}
+
+.journal-add-form__row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.journal-add-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 80px;
+}
+
+.journal-add-form__field--full {
+  width: 100%;
+  flex: unset;
+}
+
+.journal-add-form__field label {
+  font-size: 10px;
+  color: #7a8499;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.journal-add-form__field input,
+.journal-add-form__field select,
+.journal-add-form__field textarea {
+  background: #161a22;
+  border: 1px solid #1e2530;
+  border-radius: 7px;
+  color: #e8eaf0;
+  font-size: 13px;
+  padding: 8px 10px;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.journal-add-form__field input:focus,
+.journal-add-form__field select:focus,
+.journal-add-form__field textarea:focus {
+  border-color: #f0b429;
+}
+
+.journal-add-form__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Filters */
+.journal-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.journal-filter-btn {
+  background: #111318;
+  border: 1px solid #1e2530;
+  border-radius: 7px;
+  color: #7a8499;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.journal-filter-btn:hover {
+  border-color: #4a5568;
+  color: #e8eaf0;
+}
+
+.journal-filter-btn--active {
+  background: rgba(240, 180, 41, 0.1);
+  border-color: #f0b429;
+  color: #f0b429;
+  font-weight: 700;
+}
+
+/* Journal entries */
+.journal-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.journal-empty {
+  color: #4a5568;
+  font-size: 13px;
+  text-align: center;
+  padding: 24px;
+  font-style: italic;
+  background: #111318;
+  border-radius: 10px;
+  border: 1px solid #1e2530;
+}
+
+/* Journal card */
+.journal-card {
+  background: #111318;
+  border-radius: 12px;
+  border: 1px solid #1e2530;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: border-color 0.15s;
+}
+
+.journal-card--win    { border-left: 3px solid #22c55e; }
+.journal-card--loss   { border-left: 3px solid #ef4444; }
+.journal-card--skip   { border-left: 3px solid #7a8499; }
+.journal-card--pending{ border-left: 3px solid #f0b429; }
+
+.journal-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.journal-card__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.journal-card__pair {
+  font-family: monospace;
+  font-weight: 800;
+  font-size: 15px;
+  color: #e8eaf0;
+}
+
+.journal-card__tf {
+  font-size: 10px;
+  color: #f0b429;
+  background: rgba(240, 180, 41, 0.1);
+  border: 1px solid rgba(240, 180, 41, 0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-weight: 700;
+}
+
+.journal-card__dir {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+.journal-card__dir--buy {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.journal-card__dir--sell {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.journal-card__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.journal-card__date {
+  font-size: 11px;
+  color: #4a5568;
+}
+
+.journal-card__delete {
+  background: none;
+  border: none;
+  color: #4a5568;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.journal-card__delete:hover { color: #ef4444; }
+
+/* Outcome buttons */
+.journal-card__outcomes {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.outcome-btn {
+  flex: 1;
+  min-width: 70px;
+  padding: 7px 6px;
+  border-radius: 7px;
+  border: 1px solid #1e2530;
+  background: #161a22;
+  color: #7a8499;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.outcome-btn--win.outcome-btn--active    { background: rgba(34,197,94,0.12);  border-color: #22c55e; color: #22c55e; }
+.outcome-btn--loss.outcome-btn--active   { background: rgba(239,68,68,0.12); border-color: #ef4444; color: #ef4444; }
+.outcome-btn--skipped.outcome-btn--active{ background: rgba(122,132,153,0.12);border-color: #7a8499; color: #9ca3af; }
+.outcome-btn--pending.outcome-btn--active{ background: rgba(240,180,41,0.12); border-color: #f0b429; color: #f0b429; }
+
+.outcome-btn:hover { border-color: #4a5568; color: #e8eaf0; }
+
+/* R multiple */
+.journal-card__rmult {
+  font-size: 12px;
+  color: #7a8499;
+}
+
+/* Notes */
+.journal-card__notes {
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.65;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px dashed #1e2530;
+  min-height: 32px;
+}
+
+.journal-card__notes:hover { border-color: #4a5568; }
+.journal-card__notes--placeholder { color: #4a5568; font-style: italic; }
+
+/* Edit form */
+.journal-card__edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.journal-card__edit textarea,
+.journal-card__edit input {
+  background: #161a22;
+  border: 1px solid #f0b429;
+  border-radius: 7px;
+  color: #e8eaf0;
+  font-size: 13px;
+  padding: 8px 10px;
+  outline: none;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.journal-card__edit-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Analysis reasons */
+.journal-card__reasons {
+  font-size: 12px;
+  color: #7a8499;
+}
+
+.journal-card__reasons summary {
+  cursor: pointer;
+  padding: 4px 0;
+  user-select: none;
+}
+
+.journal-card__reasons ul {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  line-height: 1.7;
+}
+
+.journal-card__reasons li { margin-bottom: 4px; }
+
+/* Clear button */
+.journal-clear-btn {
+  background: none;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 7px;
+  color: #7a8499;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.journal-clear-btn:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}

@@ -4,16 +4,22 @@ import HistoryPanel from './components/HistoryPanel.jsx';
 import RulesReference from './components/RulesReference.jsx';
 import Mt5Guide from './components/Mt5Guide.jsx';
 import ToolsPanel from './components/ToolsPanel.jsx';
+import TimeframeGuard from './components/TimeframeGuard.jsx';
+import TradeJournal from './components/TradeJournal.jsx';
+import NewsFilter from './components/NewsFilter.jsx';
 import { saveHistoryEntry } from './lib/historyStorage.js';
+import { saveJournalEntry } from './lib/journalStorage.js';
 import { runFullAnalysis } from './lib/runAnalysis.js';
+import { TIMEFRAMES } from './lib/bibleRules.js';
 import './App.css';
 
 const TABS = [
-  { id: 'analyze', label: 'Analyze' },
-  { id: 'tools', label: 'Tools' },
-  { id: 'guide', label: 'Guide' },
-  { id: 'rules', label: 'Rules' },
-  { id: 'history', label: 'History' },
+  { id: 'analyze', label: 'Analyze'  },
+  { id: 'journal', label: 'Journal'  },
+  { id: 'tools',   label: 'Tools'    },
+  { id: 'guide',   label: 'Guide'    },
+  { id: 'rules',   label: 'Rules'    },
+  { id: 'history', label: 'History'  },
 ];
 
 const VALID_TABS = new Set(TABS.map((t) => t.id));
@@ -25,31 +31,39 @@ async function thumbnailFromFile(file, maxSize = 120) {
     img.onload = () => {
       const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
       const canvas = document.createElement('canvas');
-      canvas.width = Math.floor(img.width * scale);
+      canvas.width  = Math.floor(img.width  * scale);
       canvas.height = Math.floor(img.height * scale);
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
       resolve(canvas.toDataURL('image/jpeg', 0.7));
     };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve(null);
-    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
     img.src = url;
   });
 }
 
 export default function App() {
   const inputRef = useRef(null);
-  const [tab, setTab] = useState('analyze');
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [dragOver, setDragOver] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [outcome, setOutcome] = useState(null);
-  const [historyKey, setHistoryKey] = useState(0);
 
+  const [tab,        setTab       ] = useState('analyze');
+  const [file,       setFile      ] = useState(null);
+  const [preview,    setPreview   ] = useState(null);
+  const [dragOver,   setDragOver  ] = useState(false);
+  const [loading,    setLoading   ] = useState(false);
+  const [error,      setError     ] = useState(null);
+  const [outcome,    setOutcome   ] = useState(null);
+  const [historyKey, setHistoryKey] = useState(0);
+  const [journalKey, setJournalKey] = useState(0);
+  const [pair,       setPair      ] = useState('');
+
+  // Timeframe gate — must be set before analysis runs
+  const [timeframe,      setTimeframe     ] = useState(null);
+  const [timeframeGroup, setTimeframeGroup] = useState(null);
+
+  const isTimeframeBlocked = timeframeGroup === 'invalid';
+  const isTimeframeUnset   = timeframe === null;
+
+  // ── Hash routing (keep your existing behaviour) ───────────────────────────
   const goTab = useCallback((id) => {
     setTab(id);
     window.history.replaceState(null, '', `#${id}`);
@@ -69,6 +83,7 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
+  // ── File helpers ──────────────────────────────────────────────────────────
   const clearPreview = useCallback(() => {
     if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
@@ -92,36 +107,80 @@ export default function App() {
     setFile(nextFile);
   }, []);
 
+  // ── Analysis ──────────────────────────────────────────────────────────────
   const analyze = async () => {
+    if (isTimeframeBlocked) {
+      setError(
+        `${timeframe} charts are noise, not signal. ` +
+        'Switch to H4 or D1 on MT5 and take a new screenshot.',
+      );
+      return;
+    }
+    if (isTimeframeUnset) {
+      setError('Select your chart timeframe above before running analysis.');
+      return;
+    }
     if (!file) {
       setError('Upload a candlestick chart screenshot first.');
       return;
     }
+
     setLoading(true);
     setError(null);
     setOutcome(null);
+
     try {
       const result = await runFullAnalysis(file);
+      result.timeframe      = timeframe;
+      result.timeframeGroup = timeframeGroup;
+
+      // H1 is allowed but inject a caution
+      if (timeframeGroup === 'confirm') {
+        result.reasons = [
+          '⚠️ H1 timeframe: use for entry timing only — identify zones on H4/Daily first.',
+          ...result.reasons,
+        ];
+      }
+
       setOutcome(result);
 
       const thumb = await thumbnailFromFile(file);
+
+      // Save to history
       saveHistoryEntry({
-        decision: result.decision,
-        verdict: result.verdict,
-        setupGrade: result.setupGrade,
-        confidence: result.confidence,
+        decision:        result.decision,
+        verdict:         result.verdict,
+        setupGrade:      result.setupGrade,
+        confidence:      result.confidence,
         marketStructure: result.analysis.marketStructure,
         confluenceScore: result.analysis.confluenceScore,
         checklistPassed: result.checklist.passedRequired,
-        checklistTotal: result.checklist.totalRequired,
-        reasons: result.reasons,
-        thumbnail: thumb,
+        checklistTotal:  result.checklist.totalRequired,
+        reasons:         result.reasons,
+        timeframe,
+        pair:            pair.toUpperCase().trim() || null,
+        thumbnail:       thumb,
         snapshot: {
           analysis: result.analysis,
           checklist: result.checklist,
-          scores: result.scores,
+          scores:    result.scores,
         },
       });
+
+      // Auto-create pending journal entry for actionable signals
+      if (result.decision === 'BUY' || result.decision === 'SELL') {
+        saveJournalEntry({
+          pair:       pair.toUpperCase().trim() || 'Unknown',
+          timeframe,
+          direction:  result.decision,
+          reasons:    result.reasons,
+          setupGrade: result.setupGrade,
+          confidence: result.confidence,
+          source:     'auto',
+        });
+        setJournalKey((k) => k + 1);
+      }
+
       setHistoryKey((k) => k + 1);
     } catch (err) {
       setError(err.message || 'Analysis failed. Try another image.');
@@ -133,27 +192,27 @@ export default function App() {
   const viewHistoryEntry = (entry) => {
     if (entry.snapshot) {
       setOutcome({
-        decision: entry.decision,
-        verdict: entry.verdict,
+        decision:   entry.decision,
+        verdict:    entry.verdict,
         setupGrade: entry.setupGrade,
         confidence: entry.confidence,
-        reasons: entry.reasons || [],
-        analysis: entry.snapshot.analysis,
-        checklist: entry.snapshot.checklist,
-        scores: entry.snapshot.scores,
+        reasons:    entry.reasons || [],
+        timeframe:  entry.timeframe,
+        analysis:   entry.snapshot.analysis,
+        checklist:  entry.snapshot.checklist,
+        scores:     entry.snapshot.scores,
       });
     }
-    setTab('analyze');
-    window.history.replaceState(null, '', '#analyze');
+    goTab('analyze');
   };
+
+  const analyzeDisabled = !file || loading || isTimeframeBlocked || isTimeframeUnset;
 
   return (
     <div className="app">
       <header className="header">
         <h1>Candlestick Bible Analyzer</h1>
-        <p>
-          Bible methodology + modern price-action rules. One decision: Buy, Sell, or Stay Out.
-        </p>
+        <p>Bible methodology + modern price-action rules. One decision: Buy, Sell, or Stay Out.</p>
       </header>
 
       <nav className="tabs" aria-label="Main">
@@ -171,12 +230,40 @@ export default function App() {
 
       {tab === 'analyze' && (
         <>
-          <div
-            className={`upload-zone ${dragOver ? 'dragover' : ''} ${preview ? 'has-preview' : ''}`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOver(true);
+          {/* Optional pair label — feeds journal auto-entry */}
+          <div className="pair-input-row">
+            <label htmlFor="pair-input">Pair</label>
+            <input
+              id="pair-input"
+              type="text"
+              placeholder="e.g. EURUSD (optional)"
+              maxLength={8}
+              value={pair}
+              onChange={(e) => setPair(e.target.value.toUpperCase())}
+            />
+          </div>
+
+          {/* Inline news warning — only shows if danger event within 2h */}
+          {pair.length >= 5 && <NewsFilter pair={pair} compact />}
+
+          {/* Step 1 — Timeframe selector */}
+          <TimeframeGuard
+            onTimeframeChange={(tf, group) => {
+              setTimeframe(tf);
+              setTimeframeGroup(group);
+              setError(null);
             }}
+          />
+
+          {/* Step 2 — Chart upload */}
+          <div
+            className={[
+              'upload-zone',
+              dragOver ? 'dragover' : '',
+              preview  ? 'has-preview' : '',
+              isTimeframeBlocked ? 'upload-zone--blocked' : '',
+            ].filter(Boolean).join(' ')}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true);  }}
             onDragLeave={() => setDragOver(false)}
             onDrop={(e) => {
               e.preventDefault();
@@ -188,11 +275,22 @@ export default function App() {
             {preview ? (
               <div className="preview-wrap">
                 <img src={preview} alt="Chart preview" />
+                {timeframe && (
+                  <div className={`preview-tf-badge preview-tf-badge--${timeframeGroup}`}>
+                    {timeframe}
+                  </div>
+                )}
               </div>
             ) : (
               <>
                 <p>Drop your chart screenshot here, or choose a file</p>
-                <p className="upload-hint">Best: clear candlesticks on 1H, 4H, or daily</p>
+                <p className="upload-hint">
+                  {isTimeframeBlocked
+                    ? `⛔ ${timeframe} blocked — switch to H4 or D1 on MT5 first`
+                    : isTimeframeUnset
+                    ? 'Select your timeframe above first'
+                    : `Ready for ${timeframe} chart`}
+                </p>
               </>
             )}
 
@@ -200,14 +298,17 @@ export default function App() {
               ref={inputRef}
               type="file"
               accept="image/png,image/jpeg,image/webp,image/*"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) acceptFile(f);
-              }}
+              disabled={isTimeframeBlocked}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) acceptFile(f); }}
             />
 
             <div className="upload-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => inputRef.current?.click()}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={isTimeframeBlocked}
+                onClick={() => inputRef.current?.click()}
+              >
                 {preview ? 'Change image' : 'Choose image'}
               </button>
               {preview && (
@@ -215,7 +316,12 @@ export default function App() {
                   Clear
                 </button>
               )}
-              <button type="button" className="btn btn-analyze" onClick={analyze} disabled={!file || loading}>
+              <button
+                type="button"
+                className="btn btn-analyze"
+                onClick={analyze}
+                disabled={analyzeDisabled}
+              >
                 {loading && <span className="spinner" />}
                 {loading ? 'Analyzing…' : 'Analyze chart'}
               </button>
@@ -227,10 +333,11 @@ export default function App() {
         </>
       )}
 
-      {tab === 'tools' && <ToolsPanel onOpenGuide={() => goTab('guide')} />}
-      {tab === 'guide' && <Mt5Guide />}
-      {tab === 'rules' && <RulesReference />}
-      {tab === 'history' && <HistoryPanel refreshKey={historyKey} onSelect={viewHistoryEntry} />}
+      {tab === 'journal'  && <TradeJournal refreshKey={journalKey} />}
+      {tab === 'tools'    && <ToolsPanel onOpenGuide={() => goTab('guide')} />}
+      {tab === 'guide'    && <Mt5Guide />}
+      {tab === 'rules'    && <RulesReference />}
+      {tab === 'history'  && <HistoryPanel refreshKey={historyKey} onSelect={viewHistoryEntry} />}
 
       <p className="disclaimer">
         Frontend only — no server. History stays in your browser. Screenshot heuristics + Bible/modern
