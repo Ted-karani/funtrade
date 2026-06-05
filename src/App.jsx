@@ -1,7 +1,8 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import DecisionReport from './components/DecisionReport.jsx';
 import HistoryPanel from './components/HistoryPanel.jsx';
 import RulesReference from './components/RulesReference.jsx';
+import Mt5Guide from './components/Mt5Guide.jsx';
 import ToolsPanel from './components/ToolsPanel.jsx';
 import { saveHistoryEntry } from './lib/historyStorage.js';
 import { runFullAnalysis } from './lib/runAnalysis.js';
@@ -10,9 +11,12 @@ import './App.css';
 const TABS = [
   { id: 'analyze', label: 'Analyze' },
   { id: 'tools', label: 'Tools' },
+  { id: 'guide', label: 'Guide' },
   { id: 'rules', label: 'Rules' },
   { id: 'history', label: 'History' },
 ];
+
+const VALID_TABS = new Set(TABS.map((t) => t.id));
 
 async function thumbnailFromFile(file, maxSize = 120) {
   return new Promise((resolve) => {
@@ -45,6 +49,25 @@ export default function App() {
   const [error, setError] = useState(null);
   const [outcome, setOutcome] = useState(null);
   const [historyKey, setHistoryKey] = useState(0);
+
+  const goTab = useCallback((id) => {
+    setTab(id);
+    window.history.replaceState(null, '', `#${id}`);
+  }, []);
+
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (VALID_TABS.has(hash)) setTab(hash);
+  }, []);
+
+  useEffect(() => {
+    const onHash = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (VALID_TABS.has(hash)) setTab(hash);
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
 
   const clearPreview = useCallback(() => {
     if (preview) URL.revokeObjectURL(preview);
@@ -121,6 +144,7 @@ export default function App() {
       });
     }
     setTab('analyze');
+    window.history.replaceState(null, '', '#analyze');
   };
 
   return (
@@ -138,7 +162,7 @@ export default function App() {
             key={t.id}
             type="button"
             className={`tab ${tab === t.id ? 'active' : ''}`}
-            onClick={() => setTab(t.id)}
+            onClick={() => goTab(t.id)}
           >
             {t.label}
           </button>
@@ -203,7 +227,8 @@ export default function App() {
         </>
       )}
 
-      {tab === 'tools' && <ToolsPanel />}
+      {tab === 'tools' && <ToolsPanel onOpenGuide={() => goTab('guide')} />}
+      {tab === 'guide' && <Mt5Guide />}
       {tab === 'rules' && <RulesReference />}
       {tab === 'history' && <HistoryPanel refreshKey={historyKey} onSelect={viewHistoryEntry} />}
 
