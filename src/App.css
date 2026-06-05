@@ -560,3 +560,253 @@
     transform: rotate(360deg);
   }
 }
+
+.tools-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.tool-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+}
+
+.tool-card h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+}
+
+.tool-sub {
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.tool-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-right: 0.5rem;
+}
+
+.tool-foot {
+  margin: 1rem 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.session-hero {
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+}
+
+.session-hero.session-best {
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.session-hero.session-good {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.session-hero.session-caution {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.session-hero.session-avoid,
+.session-hero.session-wait {
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.session-hero.session-closed {
+  background: rgba(139, 156, 179, 0.1);
+}
+
+.session-time {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.session-window-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-top: 0.35rem;
+}
+
+.session-message {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.session-active {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.session-pill {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+}
+
+.session-pill.peak {
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--buy);
+}
+
+.session-pill.high {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+.session-pill.medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--stay);
+}
+
+.session-pill.low,
+.session-pill.none {
+  color: var(--text-muted);
+}
+
+.session-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.session-list li {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+  opacity: 0.75;
+}
+
+.session-list li.on {
+  opacity: 1;
+  border-left: 3px solid var(--accent);
+  padding-left: 0.65rem;
+}
+
+.session-row-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.session-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.rr-direction {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.rr-dir-btn {
+  flex: 1;
+  padding: 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface-hover);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.rr-dir-btn.active.buy {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: var(--buy);
+  color: var(--buy);
+}
+
+.rr-dir-btn.active.sell {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--sell);
+  color: var(--sell);
+}
+
+.rr-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.rr-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.rr-grid input {
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.rr-grid label:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.rr-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.rr-result.pass {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.rr-result.fail {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.rr-ratio {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.rr-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.rr-warn {
+  color: var(--sell);
+  font-weight: 600;
+}
+
+@media (max-width: 520px) {
+  .rr-grid {
+    grid-template-columns: 1fr;
+  }
+}

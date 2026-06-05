@@ -2,12 +2,14 @@ import { useCallback, useRef, useState } from 'react';
 import DecisionReport from './components/DecisionReport.jsx';
 import HistoryPanel from './components/HistoryPanel.jsx';
 import RulesReference from './components/RulesReference.jsx';
+import ToolsPanel from './components/ToolsPanel.jsx';
 import { saveHistoryEntry } from './lib/historyStorage.js';
 import { runFullAnalysis } from './lib/runAnalysis.js';
 import './App.css';
 
 const TABS = [
   { id: 'analyze', label: 'Analyze' },
+  { id: 'tools', label: 'Tools' },
   { id: 'rules', label: 'Rules' },
   { id: 'history', label: 'History' },
 ];
@@ -201,6 +203,7 @@ export default function App() {
         </>
       )}
 
+      {tab === 'tools' && <ToolsPanel />}
       {tab === 'rules' && <RulesReference />}
       {tab === 'history' && <HistoryPanel refreshKey={historyKey} onSelect={viewHistoryEntry} />}
 

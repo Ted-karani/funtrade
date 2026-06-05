@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MT5 Beginner Blueprint — Candlestick Bible</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --card: #1a2332;
+      --border: #2d3a4f;
+      --text: #e8edf4;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --green: #22c55e;
+      --red: #ef4444;
+      --amber: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+    h1 { font-size: 1.85rem; margin: 0 0 0.5rem; }
+    h2 { font-size: 1.15rem; margin: 2rem 0 0.75rem; color: var(--accent); }
+    h3 { font-size: 0.95rem; margin: 1rem 0 0.5rem; }
+    p.lead { color: var(--muted); margin: 0 0 1.5rem; }
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .hero strong { color: var(--green); }
+    .pills { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0; }
+    .pill {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.15rem;
+      margin-bottom: 1rem;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { text-align: left; padding: 0.55rem 0.65rem; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    ul { margin: 0.5rem 0; padding-left: 1.2rem; }
+    li { margin-bottom: 0.35rem; font-size: 0.92rem; }
+    .ok { color: var(--green); }
+    .no { color: var(--red); }
+    .warn { color: var(--amber); }
+    pre {
+      background: #0a0e14;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: 0.75rem;
+      overflow-x: auto;
+      line-height: 1.4;
+    }
+    .checklist li { list-style: none; margin-left: -1.2rem; }
+    .checklist li::before { content: "✓ "; color: var(--green); font-weight: bold; }
+    .footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 2rem; }
+    @media print {
+      body { background: #fff; color: #111; }
+      .card, .hero { border-color: #ccc; background: #f9f9f9; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>MT5 Beginner Blueprint</h1>
+    <p class="lead">MetaTrader 5 + Candlestick Bible — save this file on your Desktop and open anytime in Chrome/Edge. Pair with your Candlestick Bible Analyzer app.</p>
+
+    <div class="hero">
+      <strong>60-second start:</strong> MT5 demo → EUR/USD → 4H + Daily charts → 0.01 lot → risk 1% → screenshot to app → only trade if BUY/SELL + checklist passes → SL beyond wick, TP ≥ 2× risk → best hours <strong>8 AM – 12 PM Eastern</strong>.
+    </div>
+
+    <div class="pills">
+      <span class="pill">Demo first</span>
+      <span class="pill">EUR/USD</span>
+      <span class="pill">4H + Daily</span>
+      <span class="pill">1% risk</span>
+      <span class="pill">8–12 ET</span>
+      <span class="pill">Min 2:1 R:R</span>
+    </div>
+
+    <h2>Part 1 — MT5 features you actually need</h2>
+    <div class="card">
+      <table>
+        <tr><th>Feature</th><th>What it does</th><th>How</th></tr>
+        <tr><td>Market Watch</td><td>Symbol list + prices</td><td>Ctrl+M → add EURUSD</td></tr>
+        <tr><td>Chart</td><td>Candlesticks</td><td>Double-click symbol; press 4 (4H) or D (Daily)</td></tr>
+        <tr><td>New Order F9</td><td>Stake, SL, TP</td><td>Volume 0.01 → set SL/TP on chart → Send</td></tr>
+        <tr><td>Toolbox → Trade</td><td>Open trades</td><td>Ctrl+T; right-click to edit SL/TP</td></tr>
+        <tr><td>Toolbox → History</td><td>Journal</td><td>Review weekly</td></tr>
+        <tr><td>Account bar</td><td>Balance / margin</td><td>Don’t trade with low free margin</td></tr>
+      </table>
+    </div>
+
+    <h2>Part 2 — Set your stake (lots)</h2>
+    <div class="card">
+      <ol>
+        <li>Open EUR/USD chart on 4H</li>
+        <li>Press <strong>F9</strong></li>
+        <li>Volume: <strong>0.01</strong> (demo micro lot)</li>
+        <li>Click Stop Loss field → click chart below entry (long) or above (short)</li>
+        <li>Take Profit at next support/resistance — at least <strong>2×</strong> the SL distance</li>
+        <li>Check risk $ in order window → must be ≤ <strong>1%</strong> of balance</li>
+        <li>Send only if your app says BUY or SELL</li>
+      </ol>
+      <p class="warn">0.01 lot on EUR/USD ≈ $0.10 per pip. On $500 account, 20-pip stop ≈ $2 risk.</p>
+    </div>
+
+    <h2>Part 3 — Best pairs & times</h2>
+    <div class="card">
+      <table>
+        <tr><th>Pair</th><th>When</th></tr>
+        <tr><td class="ok">EUR/USD</td><td>Start here — tight spread</td></tr>
+        <tr><td>USD/JPY</td><td>After 1 month demo</td></tr>
+        <tr><td class="no">GBP/USD, exotics</td><td>Wait until consistently profitable</td></tr>
+      </table>
+      <h3>Sessions (US Eastern)</h3>
+      <ul>
+        <li><strong class="ok">8 AM – 12 PM ET</strong> — London + NY overlap (best for majors)</li>
+        <li>3 AM – 12 PM — London</li>
+        <li>8 AM – 5 PM — New York</li>
+        <li class="warn">Avoid: Saturday, early Sunday, late Friday</li>
+      </ul>
+    </div>
+
+    <h2>Part 4 — Screenshot for your analyzer app</h2>
+    <div class="card">
+      <h3 class="ok">Must capture</h3>
+      <ul class="checklist">
+        <li>Last 20–40 candles on the RIGHT</li>
+        <li>Clear bodies + wicks</li>
+        <li>Timeframe visible (4H or Daily)</li>
+        <li>Price scale on the right</li>
+      </ul>
+      <h3 class="no">Avoid</h3>
+      <ul>
+        <li>Indicators only, no candles</li>
+        <li>Tiny or blurry crop</li>
+        <li>Multiple timeframes in one image</li>
+      </ul>
+      <pre>┌──────────────────────────────────────┐
+│ EURUSD · H4              [price]     │
+│   older candles  │ RECENT candles ←   │  app reads right side
+└──────────────────────────────────────┘
+Win+Shift+S (Windows Snipping Tool)</pre>
+    </div>
+
+    <h2>Part 5 — When to END trades</h2>
+    <div class="card">
+      <ul>
+        <li><strong>TP hit</strong> — done, no FOMO re-entry</li>
+        <li><strong>SL hit</strong> — accept loss, no revenge</li>
+        <li><strong>Invalidation</strong> — close beyond signal wick</li>
+        <li><strong>Doji at profit</strong> — take profit (Bible: indecision)</li>
+        <li><strong>2:1 R:R reached</strong> — move SL to breakeven optional</li>
+        <li><strong>2 losses same day</strong> — stop trading</li>
+      </ul>
+    </div>
+
+    <h2>Part 6 — 4-week beginner path</h2>
+    <div class="card">
+      <ul>
+        <li><strong>Week 1:</strong> MT5 demo, Market Watch, F9, 0.01 lots only</li>
+        <li><strong>Week 2:</strong> 4H only, mark S/R, screenshot → app before every demo trade</li>
+        <li><strong>Week 3:</strong> Add Daily top-down; trade only when app + eyes agree</li>
+        <li><strong>Week 4:</strong> Journal 20+ trades; no live money until 3 profitable demo months</li>
+      </ul>
+    </div>
+
+    <h2>Part 7 — Daily workflow</h2>
+    <div class="card">
+      <p>DEMO → Daily structure → 4H levels → App screenshot → Checklist pass? → Tools tab (session + R:R) → F9 order → History tab journal.</p>
+      <p><strong>Golden rule:</strong> App says STAY OUT → you do not trade. No exceptions while learning.</p>
+    </div>
+
+    <p class="footer">Educational guide — Candlestick Bible methodology. Not financial advice. Saved from Candlestick Bible Analyzer.</p>
+  </div>
+</body>
+</html>
