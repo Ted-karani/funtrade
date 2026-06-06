@@ -1,0 +1,241 @@
+.spread-checker {
+  background: #111318;
+  border: 1px solid #1e2530;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.spread-checker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.spread-checker__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e8eaf0;
+}
+
+.spread-checker__toggle {
+  background: none;
+  border: 1px solid #1e2530;
+  color: #7a8499;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.spread-checker__toggle:hover {
+  border-color: #4a5568;
+  color: #e8eaf0;
+}
+
+.spread-checker__desc {
+  margin: 0;
+  color: #7a8499;
+  line-height: 1.65;
+}
+
+/* Inputs */
+.spread-checker__inputs {
+  display: flex;
+  gap: 10px;
+}
+
+.spread-checker__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.spread-checker__field label {
+  font-size: 11px;
+  color: #7a8499;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.spread-checker__field input {
+  background: #161a22;
+  border: 1px solid #1e2530;
+  border-radius: 7px;
+  color: #e8eaf0;
+  font-size: 13px;
+  padding: 8px 10px;
+  width: 100%;
+  outline: none;
+  font-family: monospace;
+  box-sizing: border-box;
+}
+
+.spread-checker__field input:focus {
+  border-color: #f0b429;
+}
+
+/* Result card */
+.spread-checker__result {
+  border-radius: 8px;
+  border: 1px solid;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spread-checker__result-header {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.spread-checker__stats {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.spread-checker__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.spread-checker__stat-label {
+  font-size: 10px;
+  color: #7a8499;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.spread-checker__stat-value {
+  font-size: 15px;
+  font-weight: 700;
+  color: #e8eaf0;
+  font-family: monospace;
+}
+
+/* Advice */
+.spread-checker__advice {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.65;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.spread-checker__advice--ok {
+  background: rgba(34, 197, 94, 0.08);
+  color: #86efac;
+}
+
+.spread-checker__advice--warn {
+  background: rgba(240, 180, 41, 0.08);
+  color: #fde68a;
+}
+
+.spread-checker__advice--danger {
+  background: rgba(239, 68, 68, 0.08);
+  color: #fca5a5;
+}
+
+.spread-checker__unknown {
+  margin: 0;
+  color: #7a8499;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Table */
+.spread-checker__table-wrap {
+  overflow-x: auto;
+}
+
+.spread-checker__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.spread-checker__table th {
+  text-align: left;
+  color: #7a8499;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #1e2530;
+}
+
+.spread-checker__table td {
+  padding: 7px 8px;
+  color: #9ca3af;
+  border-bottom: 1px solid #111318;
+}
+
+.spread-checker__table tr:hover td {
+  background: #161a22;
+  color: #e8eaf0;
+}
+
+.spread-checker__table-pair {
+  font-family: monospace;
+  font-weight: 700;
+  color: #e8eaf0 !important;
+}
+
+.spread-checker__tier-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.spread-checker__table-note {
+  font-size: 11px;
+  color: #4a5568;
+  margin: 8px 0 0;
+  font-style: italic;
+}
+
+/* Beginner shortcuts */
+.spread-checker__beginner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.spread-checker__beginner-label {
+  font-size: 11px;
+  color: #7a8499;
+  font-weight: 600;
+}
+
+.spread-checker__beginner-btn {
+  background: #161a22;
+  border: 1px solid rgba(240, 180, 41, 0.3);
+  color: #f0b429;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: monospace;
+  transition: all 0.15s;
+}
+
+.spread-checker__beginner-btn:hover {
+  background: rgba(240, 180, 41, 0.1);
+  border-color: #f0b429;
+}

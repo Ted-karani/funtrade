@@ -14,7 +14,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { getSessionStatus } from '../lib/sessionUtils.js';
+import { getSessionStatus } from '../lib/sessionClock.js';
 import { fetchNewsEvents, filterUpcomingEvents, PAIR_CURRENCIES } from '../lib/newsUtils.js';
 import './PreTradeChecklist.css';
 

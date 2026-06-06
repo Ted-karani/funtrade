@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { getSessionStatus, SESSIONS } from '../lib/sessionUtils.js';
+import { getSessionStatus, SESSIONS } from '../lib/sessionClock.js';
 import './PairSelector.css';
 
 // All pairs grouped by recommended session
