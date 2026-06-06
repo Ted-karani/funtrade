@@ -1,0 +1,217 @@
+.weekly-review {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 13px;
+}
+
+.weekly-review__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.weekly-review__title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #e8eaf0;
+}
+
+.weekly-review__toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.weekly-review__toggle-btn {
+  background: #111318;
+  border: 1px solid #1e2530;
+  border-radius: 7px;
+  color: #7a8499;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.weekly-review__toggle-btn.active {
+  background: rgba(240,180,41,0.1);
+  border-color: #f0b429;
+  color: #f0b429;
+  font-weight: 700;
+}
+
+.weekly-review__empty {
+  color: #4a5568;
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+  padding: 24px;
+  background: #111318;
+  border-radius: 10px;
+  border: 1px solid #1e2530;
+}
+
+/* Stats row */
+.weekly-review__stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: #111318;
+  border: 1px solid #1e2530;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.review-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 55px;
+}
+
+.review-stat__label {
+  font-size: 10px;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.review-stat__value {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: monospace;
+  color: #e8eaf0;
+}
+
+/* Verdict */
+.weekly-review__verdict {
+  border-radius: 8px;
+  border: 1px solid;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+/* Section */
+.weekly-review__section {
+  background: #111318;
+  border: 1px solid #1e2530;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.weekly-review__section-title {
+  font-size: 10px;
+  color: #f0b429;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+/* Pair rows */
+.review-pair-header {
+  display: grid;
+  grid-template-columns: 1fr 50px 80px 60px;
+  gap: 8px;
+  font-size: 10px;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 4px;
+}
+
+.review-pair-row {
+  display: grid;
+  grid-template-columns: 1fr 50px 80px 60px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 4px;
+  border-top: 1px solid #1a1f28;
+}
+
+.review-pair-row__pair {
+  font-family: monospace;
+  font-weight: 700;
+  color: #e8eaf0;
+  font-size: 12px;
+}
+
+.review-pair-row__wr,
+.review-pair-row__trades {
+  font-size: 11px;
+  color: #7a8499;
+}
+
+.review-pair-row__r {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: monospace;
+  text-align: right;
+}
+
+/* Week breakdown */
+.weekly-review__week-row {
+  display: grid;
+  grid-template-columns: 70px 70px 60px 50px;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px solid #1a1f28;
+  font-size: 12px;
+}
+
+.weekly-review__week-label { color: #e8eaf0; font-weight: 600; }
+.weekly-review__week-trades { color: #7a8499; }
+.weekly-review__week-record { color: #7a8499; }
+.weekly-review__week-r { font-family: monospace; font-weight: 700; text-align: right; }
+
+/* Lessons */
+.weekly-review__lessons {
+  background: #111318;
+  border: 1px solid #1e2530;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.weekly-review__lesson {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.65;
+}
+
+.weekly-review__lesson-num {
+  background: rgba(240,180,41,0.15);
+  color: #f0b429;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+/* Pending */
+.weekly-review__pending {
+  background: rgba(240,180,41,0.06);
+  border: 1px solid rgba(240,180,41,0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #fde68a;
+  line-height: 1.6;
+}

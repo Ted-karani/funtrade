@@ -134,7 +134,23 @@ export function evaluateBibleAnalysis(analysis) {
     signalQuality,
     liquiditySweepHint,
     impulsiveMoveHint,
+    isStale      = false,
+    riskWarnings = [],
   } = analysis;
+
+  // Stale pattern check — price already moved past signal (Phase 2 upgrade)
+  if (isStale) {
+    reasons.push(
+      'Pattern is stale — price has already moved significantly past the signal candle. ' +
+      'Market Wizards rule: never chase. Wait for the next fresh setup.',
+    );
+    return buildResult(DECISION.STAY_OUT, reasons, 'high', { buyScore: 0, sellScore: 0 });
+  }
+
+  // Risk warnings from Phase 3 psychology rules
+  if (riskWarnings.length > 0) {
+    reasons.push(...riskWarnings);
+  }
 
   // ── PILLAR 1: MOMENTUM / MARKET STRUCTURE ──────────────────────────────────
   // Bible: "If the market is choppy, close the chart."

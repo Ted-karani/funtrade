@@ -5,56 +5,16 @@
  */
 
 export const MODERN_RULES = [
-  {
-    id: 'structure_first',
-    label: 'Define market structure before any pattern (trend / range / choppy).',
-    source: 'modern',
-  },
-  {
-    id: 'three_confluence',
-    label: 'At least 3 aligned factors: structure + key level + candlestick signal.',
-    source: 'modern',
-  },
-  {
-    id: 'no_level_no_trade',
-    label: 'No key level, no trade — do not chase mid-range candles.',
-    source: 'modern',
-  },
-  {
-    id: 'with_trend',
-    label: 'Trade with dominant flow; counter-trend only at major S/R with rejection.',
-    source: 'bible',
-  },
-  {
-    id: 'clean_signal',
-    label: 'Clean rejection (pin bar / engulfing) — weak or messy confirmation = stand down.',
-    source: 'modern',
-  },
-  {
-    id: 'liquidity_sweep',
-    label: 'Liquidity sweep / false breakout at level = high-probability (Bible inside-bar false breakout).',
-    source: 'bible',
-  },
-  {
-    id: 'pin_quality',
-    label: 'Pin bar: wick rejection at S/R; tail ideally ≥ 2× real body (Bible shooting star / hammer).',
-    source: 'bible',
-  },
-  {
-    id: 'htf_context',
-    label: 'Prefer 1H / 4H / daily charts; align lower-TF entries with higher-TF structure (top-down).',
-    source: 'bible',
-  },
-  {
-    id: 'min_rr',
-    label: 'Plan minimum 1:2 risk-to-reward before entry; stop beyond signal invalidation (wick).',
-    source: 'bible',
-  },
-  {
-    id: 'choppy_stand_down',
-    label: 'Choppy or tight noise — stay out (Bible + modern clean-chart rule).',
-    source: 'bible',
-  },
+  { id: 'structure_first', label: 'Define market structure before any pattern (trend / range / choppy).', source: 'modern' },
+  { id: 'three_confluence', label: 'At least 3 aligned factors: structure + key level + candlestick signal.', source: 'modern' },
+  { id: 'no_level_no_trade', label: 'No key level, no trade — do not chase mid-range candles.', source: 'modern' },
+  { id: 'with_trend', label: 'Trade with dominant flow; counter-trend only at major S/R with rejection.', source: 'bible' },
+  { id: 'clean_signal', label: 'Clean rejection (pin bar / engulfing) — weak or messy confirmation = stand down.', source: 'modern' },
+  { id: 'liquidity_sweep', label: 'Liquidity sweep / false breakout at level = high-probability (Bible inside-bar false breakout).', source: 'bible' },
+  { id: 'pin_quality', label: 'Pin bar: wick rejection at S/R; tail ideally ≥ 2× real body (Bible shooting star / hammer).', source: 'bible' },
+  { id: 'htf_context', label: 'Prefer 1H / 4H / daily charts; align lower-TF entries with higher-TF structure (top-down).', source: 'bible' },
+  { id: 'min_rr', label: 'Plan minimum 1:2 risk-to-reward before entry; stop beyond signal invalidation (wick).', source: 'bible' },
+  { id: 'choppy_stand_down', label: 'Choppy or tight noise — stay out (Bible + modern clean-chart rule).', source: 'bible' },
 ];
 
 export function evaluateModernChecklist(analysis, decision) {
@@ -70,11 +30,13 @@ export function evaluateModernChecklist(analysis, decision) {
     liquiditySweepHint,
   } = analysis;
 
-  const hasLevel = nearSupport || nearResistance;
-  const hasSignal = patterns.length > 0 && signalQuality !== 'weak';
+  const hasLevel       = nearSupport || nearResistance;
+  const hasSignal      = patterns.length > 0 && signalQuality !== 'weak';
   const structureClear = marketStructure && !['unclear'].includes(marketStructure);
+
+  // Updated threshold: confluenceScore is now 0–10 (was 0–5)
   const threeConfluence =
-    confluenceScore >= 3 ||
+    confluenceScore >= 4 ||
     (structureClear && hasLevel && hasSignal);
 
   const items = [
@@ -86,7 +48,7 @@ export function evaluateModernChecklist(analysis, decision) {
     {
       id: 'three_confluence',
       passed: threeConfluence,
-      detail: `Confluence score: ${confluenceScore}/5 (need structure + level + signal)`,
+      detail: `Confluence score: ${confluenceScore}/10 (need structure + level + signal)`,
     },
     {
       id: 'no_level_no_trade',
@@ -136,9 +98,9 @@ export function evaluateModernChecklist(analysis, decision) {
     },
   ];
 
-  const required = items.filter((i) => !i.optional && !i.manual);
+  const required       = items.filter((i) => !i.optional && !i.manual);
   const passedRequired = required.filter((i) => i.passed).length;
-  const passRate = required.length ? passedRequired / required.length : 0;
+  const passRate       = required.length ? passedRequired / required.length : 0;
 
   return { items, passedRequired, totalRequired: required.length, passRate };
 }
@@ -150,10 +112,10 @@ function checkWithTrend(structure, patterns, nearSupport, nearResistance) {
   const bearish = patterns.some((p) =>
     /bearish|shooting|evening|gravestone|tweezers_top|false_breakout_bear/.test(p),
   );
-  if (structure === 'uptrend') return !bearish || (nearResistance && bearish);
-  if (structure === 'downtrend') return !bullish || (nearSupport && bullish);
+  if (structure === 'uptrend')   return !bearish || (nearResistance && bearish);
+  if (structure === 'downtrend') return !bullish  || (nearSupport   && bullish);
   if (structure === 'ranging') {
-    if (bullish && nearSupport) return true;
+    if (bullish && nearSupport)    return true;
     if (bearish && nearResistance) return true;
     return false;
   }
@@ -163,12 +125,10 @@ function checkWithTrend(structure, patterns, nearSupport, nearResistance) {
 export function buildVerdict(decision, checklist, confidence) {
   if (decision === 'STAY_OUT') {
     const failed = checklist.items.filter((i) => !i.optional && !i.manual && !i.passed);
-    if (failed.length >= 3) {
-      return 'Stand down — setup fails modern + Bible checklist.';
-    }
+    if (failed.length >= 3) return 'Stand down — setup fails modern + Bible checklist.';
     return 'Stay out — wait for trend, level, and clean candlestick confluence.';
   }
   const action = decision === 'BUY' ? 'Buy' : 'Sell';
-  const conf = confidence === 'high' ? 'High-confidence' : 'Moderate';
+  const conf   = confidence === 'high' ? 'High-confidence' : 'Moderate';
   return `${conf} ${action} — structure, level, and signal align with Candlestick Bible + modern PA rules.`;
 }

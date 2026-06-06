@@ -7,10 +7,14 @@ import RRCalculator from './RRCalculator.jsx';
 import SessionClock from './SessionClock.jsx';
 import DualChart from './DualChart.jsx';
 import NewsFilter from './NewsFilter.jsx';
+import RiskOfRuinPanel from './RiskOfRuinPanel.jsx';
+import WeeklyReview from './WeeklyReview.jsx';
 
 const TOOL_TABS = [
   { id: 'dual',    label: '📊 Dual Chart' },
   { id: 'news',    label: '📰 News'       },
+  { id: 'review',  label: '📋 Review'     },
+  { id: 'ror',     label: '🎲 Risk/Ruin'  },
   { id: 'session', label: '🕐 Session'    },
   { id: 'rr',      label: '📐 R:R Calc'  },
   { id: 'guide',   label: '📖 MT5 Guide' },
@@ -52,6 +56,8 @@ export default function ToolsPanel({ onOpenGuide }) {
 
       {toolTab === 'dual'    && <DualChart pair={pair} />}
       {toolTab === 'news'    && <NewsFilter pair={pair} />}
+      {toolTab === 'review'  && <WeeklyReview />}
+      {toolTab === 'ror'     && <RiskOfRuinPanel />}
       {toolTab === 'session' && <SessionClock />}
       {toolTab === 'rr'      && <RRCalculator />}
 

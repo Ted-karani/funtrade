@@ -7,10 +7,11 @@ import ToolsPanel from './components/ToolsPanel.jsx';
 import TimeframeGuard from './components/TimeframeGuard.jsx';
 import TradeJournal from './components/TradeJournal.jsx';
 import NewsFilter from './components/NewsFilter.jsx';
+import PairSelector from './components/PairSelector.jsx';
+import PreTradeChecklist from './components/PreTradeChecklist.jsx';
 import { saveHistoryEntry } from './lib/historyStorage.js';
 import { saveJournalEntry } from './lib/journalStorage.js';
 import { runFullAnalysis } from './lib/runAnalysis.js';
-import { TIMEFRAMES } from './lib/bibleRules.js';
 import './App.css';
 
 const TABS = [
@@ -56,14 +57,12 @@ export default function App() {
   const [journalKey, setJournalKey] = useState(0);
   const [pair,       setPair      ] = useState('');
 
-  // Timeframe gate — must be set before analysis runs
   const [timeframe,      setTimeframe     ] = useState(null);
   const [timeframeGroup, setTimeframeGroup] = useState(null);
 
   const isTimeframeBlocked = timeframeGroup === 'invalid';
   const isTimeframeUnset   = timeframe === null;
 
-  // ── Hash routing (keep your existing behaviour) ───────────────────────────
   const goTab = useCallback((id) => {
     setTab(id);
     window.history.replaceState(null, '', `#${id}`);
@@ -83,7 +82,6 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
 
-  // ── File helpers ──────────────────────────────────────────────────────────
   const clearPreview = useCallback(() => {
     if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
@@ -107,13 +105,9 @@ export default function App() {
     setFile(nextFile);
   }, []);
 
-  // ── Analysis ──────────────────────────────────────────────────────────────
   const analyze = async () => {
     if (isTimeframeBlocked) {
-      setError(
-        `${timeframe} charts are noise, not signal. ` +
-        'Switch to H4 or D1 on MT5 and take a new screenshot.',
-      );
+      setError(`${timeframe} charts are noise. Switch to H4 or D1 on MT5 first.`);
       return;
     }
     if (isTimeframeUnset) {
@@ -133,8 +127,8 @@ export default function App() {
       const result = await runFullAnalysis(file);
       result.timeframe      = timeframe;
       result.timeframeGroup = timeframeGroup;
+      result.pair           = pair || null;
 
-      // H1 is allowed but inject a caution
       if (timeframeGroup === 'confirm') {
         result.reasons = [
           '⚠️ H1 timeframe: use for entry timing only — identify zones on H4/Daily first.',
@@ -145,8 +139,6 @@ export default function App() {
       setOutcome(result);
 
       const thumb = await thumbnailFromFile(file);
-
-      // Save to history
       saveHistoryEntry({
         decision:        result.decision,
         verdict:         result.verdict,
@@ -167,7 +159,6 @@ export default function App() {
         },
       });
 
-      // Auto-create pending journal entry for actionable signals
       if (result.decision === 'BUY' || result.decision === 'SELL') {
         saveJournalEntry({
           pair:       pair.toUpperCase().trim() || 'Unknown',
@@ -198,6 +189,7 @@ export default function App() {
         confidence: entry.confidence,
         reasons:    entry.reasons || [],
         timeframe:  entry.timeframe,
+        pair:       entry.pair,
         analysis:   entry.snapshot.analysis,
         checklist:  entry.snapshot.checklist,
         scores:     entry.snapshot.scores,
@@ -230,23 +222,16 @@ export default function App() {
 
       {tab === 'analyze' && (
         <>
-          {/* Optional pair label — feeds journal auto-entry */}
-          <div className="pair-input-row">
-            <label htmlFor="pair-input">Pair</label>
-            <input
-              id="pair-input"
-              type="text"
-              placeholder="e.g. EURUSD (optional)"
-              maxLength={8}
-              value={pair}
-              onChange={(e) => setPair(e.target.value.toUpperCase())}
-            />
-          </div>
+          {/* Step 1 — Pair selector */}
+          <PairSelector
+            value={pair}
+            onChange={(p) => setPair(p)}
+          />
 
-          {/* Inline news warning — only shows if danger event within 2h */}
+          {/* Inline news warning */}
           {pair.length >= 5 && <NewsFilter pair={pair} compact />}
 
-          {/* Step 1 — Timeframe selector */}
+          {/* Step 2 — Timeframe selector */}
           <TimeframeGuard
             onTimeframeChange={(tf, group) => {
               setTimeframe(tf);
@@ -255,7 +240,7 @@ export default function App() {
             }}
           />
 
-          {/* Step 2 — Chart upload */}
+          {/* Step 3 — Chart upload */}
           <div
             className={[
               'upload-zone',
@@ -289,7 +274,7 @@ export default function App() {
                     ? `⛔ ${timeframe} blocked — switch to H4 or D1 on MT5 first`
                     : isTimeframeUnset
                     ? 'Select your timeframe above first'
-                    : `Ready for ${timeframe} chart`}
+                    : `Ready for ${timeframe} chart${pair ? ` · ${pair}` : ''}`}
                 </p>
               </>
             )}
@@ -329,7 +314,18 @@ export default function App() {
           </div>
 
           {error && <div className="error-banner">{error}</div>}
+
+          {/* Decision report */}
           <DecisionReport outcome={outcome} />
+
+          {/* Pre-trade checklist — only shown for BUY or SELL */}
+          {outcome && (outcome.decision === 'BUY' || outcome.decision === 'SELL') && (
+            <PreTradeChecklist
+              decision={outcome.decision}
+              timeframe={timeframe}
+              pair={pair}
+            />
+          )}
         </>
       )}
 
