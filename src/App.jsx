@@ -9,18 +9,22 @@ import TradeJournal from './components/TradeJournal.jsx';
 import NewsFilter from './components/NewsFilter.jsx';
 import PairSelector from './components/PairSelector.jsx';
 import PreTradeChecklist from './components/PreTradeChecklist.jsx';
+import LiveAnalyzer from './components/LiveAnalyzer.jsx';
+import MultiPairScanner from './components/MultiPairScanner.jsx';
 import { saveHistoryEntry } from './lib/historyStorage.js';
 import { saveJournalEntry } from './lib/journalStorage.js';
 import { runFullAnalysis } from './lib/runAnalysis.js';
 import './App.css';
 
 const TABS = [
-  { id: 'analyze', label: 'Analyze'  },
-  { id: 'journal', label: 'Journal'  },
-  { id: 'tools',   label: 'Tools'    },
-  { id: 'guide',   label: 'Guide'    },
-  { id: 'rules',   label: 'Rules'    },
-  { id: 'history', label: 'History'  },
+  { id: 'live',    label: '📡 Live'       },
+  { id: 'scanner', label: '🔍 Scanner'    },
+  { id: 'analyze', label: '📸 Screenshot' },
+  { id: 'journal', label: '📓 Journal'    },
+  { id: 'tools',   label: '🔧 Tools'      },
+  { id: 'guide',   label: '📖 Guide'      },
+  { id: 'rules',   label: '📋 Rules'      },
+  { id: 'history', label: '🕐 History'    },
 ];
 
 const VALID_TABS = new Set(TABS.map((t) => t.id));
@@ -46,7 +50,7 @@ async function thumbnailFromFile(file, maxSize = 120) {
 export default function App() {
   const inputRef = useRef(null);
 
-  const [tab,        setTab       ] = useState('analyze');
+  const [tab,        setTab       ] = useState('live');
   const [file,       setFile      ] = useState(null);
   const [preview,    setPreview   ] = useState(null);
   const [dragOver,   setDragOver  ] = useState(false);
@@ -143,7 +147,7 @@ export default function App() {
         decision:        result.decision,
         verdict:         result.verdict,
         setupGrade:      result.setupGrade,
-        confidence:      result.confidence,
+        confidence:      typeof result.confidence === 'object' ? result.confidence.score : result.confidence,
         marketStructure: result.analysis.marketStructure,
         confluenceScore: result.analysis.confluenceScore,
         checklistPassed: result.checklist.passedRequired,
@@ -166,8 +170,8 @@ export default function App() {
           direction:  result.decision,
           reasons:    result.reasons,
           setupGrade: result.setupGrade,
-          confidence: result.confidence,
-          source:     'auto',
+          confidence: typeof result.confidence === 'object' ? result.confidence.score : null,
+          source:     'screenshot-auto',
         });
         setJournalKey((k) => k + 1);
       }
@@ -198,6 +202,16 @@ export default function App() {
     goTab('analyze');
   };
 
+  const handleJournalUpdate = () => {
+    setJournalKey((k) => k + 1);
+    setHistoryKey((k) => k + 1);
+  };
+
+  const handleScannerSelect = (selectedPair) => {
+    setPair(selectedPair);
+    goTab('live');
+  };
+
   const analyzeDisabled = !file || loading || isTimeframeBlocked || isTimeframeUnset;
 
   return (
@@ -220,18 +234,27 @@ export default function App() {
         ))}
       </nav>
 
+      {tab === 'live' && (
+        <LiveAnalyzer onJournalUpdate={handleJournalUpdate} />
+      )}
+
+      {tab === 'scanner' && (
+        <MultiPairScanner onSelectPair={handleScannerSelect} />
+      )}
+
       {tab === 'analyze' && (
         <>
-          {/* Step 1 — Pair selector */}
-          <PairSelector
-            value={pair}
-            onChange={(p) => setPair(p)}
-          />
+          <div className="screenshot-mode-banner">
+            📸 Screenshot mode —{' '}
+            <button type="button" className="screenshot-mode-banner__link" onClick={() => goTab('live')}>
+              Switch to Live Data tab
+            </button>{' '}
+            for higher accuracy (~92% vs ~70%)
+          </div>
 
-          {/* Inline news warning */}
+          <PairSelector value={pair} onChange={(p) => setPair(p)} />
           {pair.length >= 5 && <NewsFilter pair={pair} compact />}
 
-          {/* Step 2 — Timeframe selector */}
           <TimeframeGuard
             onTimeframeChange={(tf, group) => {
               setTimeframe(tf);
@@ -240,7 +263,6 @@ export default function App() {
             }}
           />
 
-          {/* Step 3 — Chart upload */}
           <div
             className={[
               'upload-zone',
@@ -248,7 +270,7 @@ export default function App() {
               preview  ? 'has-preview' : '',
               isTimeframeBlocked ? 'upload-zone--blocked' : '',
             ].filter(Boolean).join(' ')}
-            onDragOver={(e) => { e.preventDefault(); setDragOver(true);  }}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={(e) => {
               e.preventDefault();
@@ -314,11 +336,7 @@ export default function App() {
           </div>
 
           {error && <div className="error-banner">{error}</div>}
-
-          {/* Decision report */}
           <DecisionReport outcome={outcome} />
-
-          {/* Pre-trade checklist — only shown for BUY or SELL */}
           {outcome && (outcome.decision === 'BUY' || outcome.decision === 'SELL') && (
             <PreTradeChecklist
               decision={outcome.decision}
@@ -336,8 +354,8 @@ export default function App() {
       {tab === 'history'  && <HistoryPanel refreshKey={historyKey} onSelect={viewHistoryEntry} />}
 
       <p className="disclaimer">
-        Frontend only — no server. History stays in your browser. Screenshot heuristics + Bible/modern
-        rules; verify on your platform. Not financial advice.
+        Frontend only — no server. History stays in your browser. Real market data via Twelve Data API.
+        Not financial advice. Never risk money you cannot afford to lose.
       </p>
     </div>
   );
