@@ -1,11 +1,5 @@
 /**
- * LiveAnalyzer.jsx
- *
- * New primary analyze panel — uses real Twelve Data OHLC candles.
- * No screenshot needed. Select pair + timeframe → click Analyze → done.
- *
- * Replaces the upload zone on the Analyze tab.
- * Screenshot mode is kept as a fallback option.
+ * LiveAnalyzer.jsx — updated with TradeCalculator
  */
 
 import { useState } from 'react';
@@ -13,30 +7,29 @@ import { runLiveAnalysis } from '../lib/runAnalysis.js';
 import { isApiKeySet } from '../lib/twelveDataAPI.js';
 import { saveHistoryEntry } from '../lib/historyStorage.js';
 import { saveJournalEntry } from '../lib/journalStorage.js';
-import { TIMEFRAMES } from '../lib/bibleRules.js';
 import DecisionReport from './DecisionReport.jsx';
 import PreTradeChecklist from './PreTradeChecklist.jsx';
+import TradeCalculator from './TradeCalculator.jsx';
 import './LiveAnalyzer.css';
 
-// Pairs available for live analysis
 const PAIRS = [
-  { symbol: 'EUR/USD', group: 'major',  tier: 'beginner'     },
-  { symbol: 'GBP/USD', group: 'major',  tier: 'beginner'     },
-  { symbol: 'USD/JPY', group: 'major',  tier: 'beginner'     },
-  { symbol: 'USD/CHF', group: 'major',  tier: 'intermediate' },
-  { symbol: 'USD/CAD', group: 'major',  tier: 'intermediate' },
-  { symbol: 'AUD/USD', group: 'major',  tier: 'intermediate' },
-  { symbol: 'NZD/USD', group: 'major',  tier: 'intermediate' },
-  { symbol: 'EUR/JPY', group: 'cross',  tier: 'intermediate' },
-  { symbol: 'GBP/JPY', group: 'cross',  tier: 'advanced'     },
-  { symbol: 'EUR/GBP', group: 'cross',  tier: 'intermediate' },
+  { symbol: 'EUR/USD', tier: 'beginner'     },
+  { symbol: 'GBP/USD', tier: 'beginner'     },
+  { symbol: 'USD/JPY', tier: 'beginner'     },
+  { symbol: 'USD/CHF', tier: 'intermediate' },
+  { symbol: 'USD/CAD', tier: 'intermediate' },
+  { symbol: 'AUD/USD', tier: 'intermediate' },
+  { symbol: 'NZD/USD', tier: 'intermediate' },
+  { symbol: 'EUR/JPY', tier: 'intermediate' },
+  { symbol: 'GBP/JPY', tier: 'advanced'     },
+  { symbol: 'EUR/GBP', tier: 'intermediate' },
 ];
 
 const TIMEFRAME_OPTIONS = [
-  { label: 'H1',  group: 'confirm', note: 'Entry timing only' },
-  { label: 'H4',  group: 'primary', note: 'Primary ✓'        },
-  { label: 'D1',  group: 'primary', note: 'Primary ✓'        },
-  { label: 'W1',  group: 'primary', note: 'Weekly bias'      },
+  { label: 'H1', group: 'confirm', note: 'Entry timing only' },
+  { label: 'H4', group: 'primary', note: 'Primary ✓'        },
+  { label: 'D1', group: 'primary', note: 'Primary ✓'        },
+  { label: 'W1', group: 'primary', note: 'Weekly bias'      },
 ];
 
 const TIER_COLOR = {
@@ -59,20 +52,13 @@ export default function LiveAnalyzer({ onJournalUpdate }) {
       setError('API key not set. Open src/lib/twelveDataAPI.js and replace YOUR_TWELVE_DATA_API_KEY_HERE with your key.');
       return;
     }
-    if (!selectedPair || !timeframe) {
-      setError('Select a pair and timeframe first.');
-      return;
-    }
-
     setLoading(true);
     setError(null);
     setOutcome(null);
 
     try {
-      // Twelve Data uses slash format: EUR/USD
       const result = await runLiveAnalysis(selectedPair, timeframe);
 
-      // H1 caution
       if (timeframe === 'H1') {
         result.reasons = [
           '⚠️ H1 timeframe: use for entry timing only — identify zones on H4/Daily first.',
@@ -82,7 +68,6 @@ export default function LiveAnalyzer({ onJournalUpdate }) {
 
       setOutcome(result);
 
-      // Save to history
       saveHistoryEntry({
         decision:        result.decision,
         verdict:         result.verdict,
@@ -103,7 +88,6 @@ export default function LiveAnalyzer({ onJournalUpdate }) {
         },
       });
 
-      // Auto journal entry for actionable signals
       if (result.decision === 'BUY' || result.decision === 'SELL') {
         saveJournalEntry({
           pair:       selectedPair.replace('/', ''),
@@ -138,7 +122,7 @@ export default function LiveAnalyzer({ onJournalUpdate }) {
         </div>
       )}
 
-      {/* Live data badge */}
+      {/* Live badge */}
       <div className="live-analyzer__badge">
         <span className="live-analyzer__badge-dot" />
         <span>Live market data — no screenshot needed</span>
@@ -197,7 +181,7 @@ export default function LiveAnalyzer({ onJournalUpdate }) {
 
       {error && <div className="error-banner">{error}</div>}
 
-      {/* Result */}
+      {/* Results */}
       {outcome && (
         <>
           {/* Live data info bar */}
@@ -205,21 +189,35 @@ export default function LiveAnalyzer({ onJournalUpdate }) {
             <span>📡 Live data</span>
             <span>{selectedPair} · {timeframe}</span>
             {outcome.analysis?.meta?.latestCandle && (
-              <span>Latest candle: {outcome.analysis.meta.latestCandle}</span>
+              <span>Latest: {outcome.analysis.meta.latestCandle}</span>
             )}
             {outcome.analysis?.indicators?.atr && (
               <span>ATR: {outcome.analysis.indicators.atr.toFixed(5)}</span>
             )}
           </div>
 
-          {/* Indicators bar */}
+          {/* Indicators */}
           {outcome.analysis?.indicators && (
-            <IndicatorsBar indicators={outcome.analysis.indicators} currentPrice={outcome.analysis.currentPrice} />
+            <IndicatorsBar
+              indicators={outcome.analysis.indicators}
+              currentPrice={outcome.analysis.currentPrice}
+              cot={outcome.cot}
+            />
           )}
 
+          {/* Main decision */}
           <DecisionReport outcome={outcome} />
 
-          {/* Pre-trade checklist for actionable signals */}
+          {/* Trade calculator — shown for BUY/SELL */}
+          {(outcome.decision === 'BUY' || outcome.decision === 'SELL') && (
+            <TradeCalculator
+              outcome={outcome}
+              pair={selectedPair}
+              timeframe={timeframe}
+            />
+          )}
+
+          {/* Pre-trade checklist */}
           {(outcome.decision === 'BUY' || outcome.decision === 'SELL') && (
             <PreTradeChecklist
               decision={outcome.decision}
@@ -233,14 +231,15 @@ export default function LiveAnalyzer({ onJournalUpdate }) {
   );
 }
 
-// ── Indicators bar ────────────────────────────────────────────────────────────
-
-function IndicatorsBar({ indicators, currentPrice }) {
+function IndicatorsBar({ indicators, currentPrice, cot }) {
   const { emas, emaTrend, atr, fibResult, suggestedSL } = indicators;
-
   const trendColor =
     emaTrend === 'bullish' ? '#22c55e' :
     emaTrend === 'bearish' ? '#ef4444' : '#7a8499';
+
+  const cotColor =
+    cot?.bias === 'bullish' ? '#22c55e' :
+    cot?.bias === 'bearish' ? '#ef4444' : '#7a8499';
 
   return (
     <div className="live-indicators">
@@ -276,7 +275,7 @@ function IndicatorsBar({ indicators, currentPrice }) {
           <div className="live-ind">
             <span className="live-ind__label">ATR (14)</span>
             <span className="live-ind__value">{atr.toFixed(5)}</span>
-            <span className="live-ind__sub">Volatility measure</span>
+            <span className="live-ind__sub">Volatility</span>
           </div>
         )}
         {fibResult?.atFib && (
@@ -285,14 +284,34 @@ function IndicatorsBar({ indicators, currentPrice }) {
             <span className="live-ind__value" style={{ color: '#f0b429' }}>
               {(fibResult.level * 100).toFixed(1)}% level
             </span>
-            <span className="live-ind__sub">Strong confluence ✓</span>
+            <span className="live-ind__sub">Confluence ✓</span>
           </div>
         )}
         {suggestedSL && (
           <div className="live-ind">
             <span className="live-ind__label">Suggested SL</span>
-            <span className="live-ind__value" style={{ color: '#ef4444' }}>{suggestedSL.toFixed(5)}</span>
-            <span className="live-ind__sub">ATR-based buffer</span>
+            <span className="live-ind__value" style={{ color: '#ef4444' }}>
+              {suggestedSL.toFixed(5)}
+            </span>
+            <span className="live-ind__sub">ATR-based</span>
+          </div>
+        )}
+        {cot?.available && (
+          <div className="live-ind live-ind--highlight">
+            <span className="live-ind__label">COT (Smart Money)</span>
+            <span className="live-ind__value" style={{ color: cotColor }}>
+              {cot.bias === 'neutral' ? 'Neutral' : cot.bias.charAt(0).toUpperCase() + cot.bias.slice(1)}
+            </span>
+            <span className="live-ind__sub">
+              {cot.currency} {cot.netPosition > 0 ? 'net long' : 'net short'} ({Math.abs(cot.pctNet)}%)
+            </span>
+          </div>
+        )}
+        {!cot?.available && (
+          <div className="live-ind">
+            <span className="live-ind__label">COT (Smart Money)</span>
+            <span className="live-ind__value" style={{ color: '#4a5568' }}>Unavailable</span>
+            <span className="live-ind__sub">No data this pair</span>
           </div>
         )}
       </div>

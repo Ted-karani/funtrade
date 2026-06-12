@@ -1,0 +1,364 @@
+.trade-calc {
+  background: #111318;
+  border: 1px solid #1e2530;
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 13px;
+}
+
+.trade-calc__title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #e8eaf0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.trade-calc__decision {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.trade-calc__desc {
+  margin: 0;
+  color: #7a8499;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+/* Inputs */
+.trade-calc__inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.trade-calc__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trade-calc__field--full {
+  grid-column: 1 / -1;
+}
+
+.trade-calc__field label {
+  font-size: 10px;
+  color: #7a8499;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.trade-calc__field input {
+  background: #161a22;
+  border: 1px solid #1e2530;
+  border-radius: 8px;
+  color: #e8eaf0;
+  font-size: 13px;
+  padding: 9px 11px;
+  outline: none;
+  font-family: monospace;
+  box-sizing: border-box;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+
+.trade-calc__field input:focus {
+  border-color: #f0b429;
+}
+
+/* Result */
+.trade-calc__result {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #0d1014;
+  border-radius: 10px;
+  padding: 16px;
+  border: 1px solid #1e2530;
+}
+
+.trade-calc__result-title {
+  font-size: 11px;
+  color: #f0b429;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Big 3 numbers */
+.trade-calc__big3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.trade-calc__big-item {
+  border-radius: 9px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 1px solid;
+}
+
+.trade-calc__big-item--entry {
+  background: rgba(59,130,246,0.07);
+  border-color: rgba(59,130,246,0.3);
+}
+
+.trade-calc__big-item--sl {
+  background: rgba(239,68,68,0.07);
+  border-color: rgba(239,68,68,0.3);
+}
+
+.trade-calc__big-item--tp {
+  background: rgba(34,197,94,0.07);
+  border-color: rgba(34,197,94,0.3);
+}
+
+.trade-calc__big-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #7a8499;
+}
+
+.trade-calc__big-value {
+  font-size: 16px;
+  font-weight: 900;
+  color: #e8eaf0;
+  font-family: monospace;
+}
+
+.trade-calc__big-item--entry .trade-calc__big-value { color: #3b82f6; }
+.trade-calc__big-item--sl    .trade-calc__big-value { color: #ef4444; }
+.trade-calc__big-item--tp    .trade-calc__big-value { color: #22c55e; }
+
+.trade-calc__big-sub {
+  font-size: 10px;
+  color: #4a5568;
+  line-height: 1.5;
+}
+
+/* Plain summary */
+.trade-calc__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #111318;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.trade-calc__summary-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.trade-calc__summary-line span {
+  color: #9ca3af;
+}
+
+.trade-calc__summary-line strong {
+  font-family: monospace;
+  font-size: 14px;
+}
+
+/* R:R warning */
+.trade-calc__rr-warn {
+  background: rgba(239,68,68,0.07);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #fca5a5;
+  line-height: 1.65;
+}
+
+/* MT5 instructions */
+.trade-calc__mt5 {
+  background: #111318;
+  border-radius: 8px;
+  padding: 12px 14px;
+  border: 1px solid #1e2530;
+}
+
+.trade-calc__mt5-title {
+  font-size: 10px;
+  color: #f0b429;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.trade-calc__mt5-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.trade-calc__mt5-step {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.5;
+}
+
+.trade-calc__mt5-num {
+  background: rgba(240,180,41,0.15);
+  color: #f0b429;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+/* Exit monitor */
+.trade-calc__monitor {
+  background: #0d1014;
+  border: 1px solid #1e2530;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trade-calc__monitor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.trade-calc__monitor-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e8eaf0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.trade-calc__monitor-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse-dot 2s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.4); }
+}
+
+.trade-calc__monitor-btn {
+  background: #161a22;
+  border: 1px solid rgba(34,197,94,0.4);
+  color: #22c55e;
+  border-radius: 7px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.trade-calc__monitor-btn:hover {
+  background: rgba(34,197,94,0.1);
+}
+
+.trade-calc__monitor-btn--stop {
+  border-color: rgba(239,68,68,0.4);
+  color: #ef4444;
+}
+
+.trade-calc__monitor-btn--stop:hover {
+  background: rgba(239,68,68,0.1);
+}
+
+.trade-calc__monitor-desc {
+  margin: 0;
+  font-size: 12px;
+  color: #7a8499;
+  line-height: 1.65;
+}
+
+.trade-calc__monitor-ok {
+  font-size: 12px;
+  color: '#22c55e';
+  color: #22c55e;
+  background: rgba(34,197,94,0.07);
+  border: 1px solid rgba(34,197,94,0.25);
+  border-radius: 7px;
+  padding: 9px 12px;
+}
+
+/* Alerts */
+.trade-calc__alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trade-calc__alert {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-radius: 8px;
+  border: 1px solid;
+  padding: 11px 13px;
+}
+
+.trade-calc__alert-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.trade-calc__alert-type {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+.trade-calc__alert-msg {
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.65;
+}
+
+@media (max-width: 480px) {
+  .trade-calc__inputs {
+    grid-template-columns: 1fr;
+  }
+  .trade-calc__field--full {
+    grid-column: 1;
+  }
+}

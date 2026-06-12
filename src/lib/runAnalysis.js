@@ -1,16 +1,8 @@
 /**
- * runAnalysis.js — updated to support both modes:
+ * runAnalysis.js — now includes COT institutional positioning data.
  *
- * MODE 1: Real data (new) — pass { symbol, timeframe }
- *   Uses Twelve Data API for precise OHLC analysis.
- *   Accuracy: ~92%
- *
- * MODE 2: Screenshot (legacy) — pass a File object
- *   Uses pixel sampling as before.
- *   Accuracy: ~70%
- *
- * The rest of the app (bibleRules, modernRules, DecisionReport)
- * works identically for both modes.
+ * MODE 1: Real data — pass (symbol, timeframe). Uses Twelve Data + COT.
+ * MODE 2: Screenshot — pass a File object. Legacy pixel mode.
  */
 
 import { analyzeChartImage   } from './imageAnalyzer.js';
@@ -20,15 +12,16 @@ import { evaluateModernChecklist, buildVerdict } from './modernRules.js';
 import { calculateConfidence, buildConfidenceSummary } from './confidenceEngine.js';
 import { getSessionStatus    } from '../lib/sessionClock.js';
 import { fetchNewsEvents, filterUpcomingEvents, PAIR_CURRENCIES } from './newsUtils.js';
+import { getCOTBiasForPair } from './cotData.js';
 
-// ── Real data analysis (new primary mode) ────────────────────────────────────
+// ── Real data analysis ────────────────────────────────────────────────────────
 
 export async function runLiveAnalysis(symbol, timeframe) {
   const imageAnalysis = await analyzeMarketData(symbol, timeframe);
   return buildFullResult(imageAnalysis, symbol);
 }
 
-// ── Screenshot analysis (legacy mode — kept for backward compatibility) ───────
+// ── Screenshot analysis (legacy) ────────────────────────────────────────────
 
 export async function runFullAnalysis(file) {
   const imageAnalysis = await analyzeChartImage(file);
@@ -42,10 +35,9 @@ async function buildFullResult(imageAnalysis, symbol) {
   const checklist = evaluateModernChecklist(imageAnalysis, result.decision);
   const verdict   = buildVerdict(result.decision, checklist, result.confidence);
 
-  // Session status for confidence engine
   const sessionStatus = getSessionStatus();
 
-  // News check for confidence engine
+  // News check
   let hasNewsRisk = false;
   if (symbol) {
     try {
@@ -59,20 +51,31 @@ async function buildFullResult(imageAnalysis, symbol) {
     }
   }
 
-  // Calculate confidence score 0–100
+  // COT institutional positioning check
+  let cot = null;
+  if (symbol) {
+    try {
+      cot = await getCOTBiasForPair(symbol);
+    } catch {
+      cot = null;
+    }
+  }
+
+  // Confidence score 0–100
   const confidence = calculateConfidence({
     analysis:      imageAnalysis,
     bibleResult:   result,
     indicators:    imageAnalysis.indicators || null,
     sessionStatus,
     hasNewsRisk,
+    cot,
   });
 
-  // Confidence summary lines
   const confidenceSummary = buildConfidenceSummary(
     confidence,
     imageAnalysis,
     imageAnalysis.indicators || null,
+    cot,
   );
 
   return {
@@ -80,8 +83,9 @@ async function buildFullResult(imageAnalysis, symbol) {
     analysis:   imageAnalysis,
     checklist,
     verdict,
-    confidence,           // now an object { score, label, color, breakdown, barWidth }
-    confidenceSummary,    // array of strings explaining the score
+    confidence,
+    confidenceSummary,
+    cot,
     setupGrade: gradeSetup(result.decision, checklist.passRate, confidence.score),
     isLiveData: imageAnalysis.meta?.isLiveData || false,
     symbol:     symbol || null,

@@ -50,11 +50,12 @@ function ConfidenceMeter({ confidence }) {
             { key: 'momentum', label: 'Momentum',    max: 20 },
             { key: 'location', label: 'Location',    max: 20 },
             { key: 'signal',   label: 'Signal',      max: 20 },
-            { key: 'ema',      label: 'EMA align',   max: 10 },
+            { key: 'ema',      label: 'EMA align',   max: 8  },
             { key: 'fibonacci',label: 'Fibonacci',   max: 8  },
-            { key: 'session',  label: 'Session',     max: 8  },
-            { key: 'news',     label: 'News clear',  max: 7  },
-            { key: 'atr',      label: 'R:R ratio',   max: 7  },
+            { key: 'cot',      label: 'COT (smart $)', max: 8 },
+            { key: 'session',  label: 'Session',     max: 6  },
+            { key: 'news',     label: 'News clear',  max: 5  },
+            { key: 'atr',      label: 'R:R ratio',   max: 5  },
           ].map(({ key, label, max }) => {
             const val = breakdown[key] ?? 0;
             const pct = max > 0 ? (val / max) * 100 : 0;
