@@ -1,5 +1,6 @@
 /**
- * LiveAnalyzer.jsx — updated with TradeCalculator
+ * LiveAnalyzer.jsx — Level 1 complete version
+ * Now includes Gold, Silver, Bitcoin, Ethereum + weekly bias display
  */
 
 import { useState } from 'react';
@@ -13,16 +14,23 @@ import TradeCalculator from './TradeCalculator.jsx';
 import './LiveAnalyzer.css';
 
 const PAIRS = [
-  { symbol: 'EUR/USD', tier: 'beginner'     },
-  { symbol: 'GBP/USD', tier: 'beginner'     },
-  { symbol: 'USD/JPY', tier: 'beginner'     },
-  { symbol: 'USD/CHF', tier: 'intermediate' },
-  { symbol: 'USD/CAD', tier: 'intermediate' },
-  { symbol: 'AUD/USD', tier: 'intermediate' },
-  { symbol: 'NZD/USD', tier: 'intermediate' },
-  { symbol: 'EUR/JPY', tier: 'intermediate' },
-  { symbol: 'GBP/JPY', tier: 'advanced'     },
-  { symbol: 'EUR/GBP', tier: 'intermediate' },
+  // Forex majors
+  { symbol: 'EUR/USD', tier: 'beginner',     group: 'forex' },
+  { symbol: 'GBP/USD', tier: 'beginner',     group: 'forex' },
+  { symbol: 'USD/JPY', tier: 'beginner',     group: 'forex' },
+  { symbol: 'USD/CHF', tier: 'intermediate', group: 'forex' },
+  { symbol: 'USD/CAD', tier: 'intermediate', group: 'forex' },
+  { symbol: 'AUD/USD', tier: 'intermediate', group: 'forex' },
+  { symbol: 'NZD/USD', tier: 'intermediate', group: 'forex' },
+  { symbol: 'EUR/JPY', tier: 'intermediate', group: 'forex' },
+  { symbol: 'GBP/JPY', tier: 'advanced',     group: 'forex' },
+  { symbol: 'EUR/GBP', tier: 'intermediate', group: 'forex' },
+  // Metals
+  { symbol: 'XAU/USD', tier: 'intermediate', group: 'metal',  label: 'Gold'   },
+  { symbol: 'XAG/USD', tier: 'advanced',     group: 'metal',  label: 'Silver' },
+  // Crypto
+  { symbol: 'BTC/USD', tier: 'advanced',     group: 'crypto', label: 'Bitcoin'  },
+  { symbol: 'ETH/USD', tier: 'advanced',     group: 'crypto', label: 'Ethereum' },
 ];
 
 const TIMEFRAME_OPTIONS = [
@@ -36,6 +44,12 @@ const TIER_COLOR = {
   beginner:     '#22c55e',
   intermediate: '#3b82f6',
   advanced:     '#a855f7',
+};
+
+const GROUP_EMOJI = {
+  forex:  '',
+  metal:  '🥇 ',
+  crypto: '₿ ',
 };
 
 export default function LiveAnalyzer({ onJournalUpdate }) {
@@ -138,7 +152,9 @@ export default function LiveAnalyzer({ onJournalUpdate }) {
             className={`live-pair-btn ${selectedPair === p.symbol ? 'live-pair-btn--active' : ''}`}
             onClick={() => { setSelectedPair(p.symbol); setOutcome(null); }}
           >
-            <span className="live-pair-btn__symbol">{p.symbol}</span>
+            <span className="live-pair-btn__symbol">
+              {GROUP_EMOJI[p.group]}{p.label || p.symbol}
+            </span>
             <span className="live-pair-btn__tier" style={{ color: TIER_COLOR[p.tier] }}>
               {p.tier}
             </span>
@@ -196,12 +212,33 @@ export default function LiveAnalyzer({ onJournalUpdate }) {
             )}
           </div>
 
+          {/* Weekly bias banner (NEW) */}
+          {outcome.analysis?.weeklyBias && outcome.analysis.weeklyBias.bias !== 'neutral' && (
+            <div
+              className="live-analyzer__weekly-banner"
+              style={{
+                borderColor: outcome.analysis.weeklyAlignment?.aligned ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)',
+                background: outcome.analysis.weeklyAlignment?.aligned ? 'rgba(34,197,94,0.06)' : 'rgba(239,68,68,0.06)',
+              }}
+            >
+              <span>📅</span>
+              <span>
+                Weekly bias: <strong>{outcome.analysis.weeklyBias.bias}</strong> ({outcome.analysis.weeklyBias.strength}) —{' '}
+                {outcome.analysis.weeklyAlignment?.aligned
+                  ? 'this signal agrees ✓'
+                  : 'this signal conflicts ⚠️'}
+              </span>
+            </div>
+          )}
+
           {/* Indicators */}
           {outcome.analysis?.indicators && (
             <IndicatorsBar
               indicators={outcome.analysis.indicators}
               currentPrice={outcome.analysis.currentPrice}
               cot={outcome.cot}
+              volumeData={outcome.analysis.volumeData}
+              correlationData={outcome.analysis.correlationData}
             />
           )}
 
@@ -231,7 +268,7 @@ export default function LiveAnalyzer({ onJournalUpdate }) {
   );
 }
 
-function IndicatorsBar({ indicators, currentPrice, cot }) {
+function IndicatorsBar({ indicators, currentPrice, cot, volumeData, correlationData }) {
   const { emas, emaTrend, atr, fibResult, suggestedSL } = indicators;
   const trendColor =
     emaTrend === 'bullish' ? '#22c55e' :
@@ -240,6 +277,11 @@ function IndicatorsBar({ indicators, currentPrice, cot }) {
   const cotColor =
     cot?.bias === 'bullish' ? '#22c55e' :
     cot?.bias === 'bearish' ? '#ef4444' : '#7a8499';
+
+  const volColor =
+    volumeData?.confirmation === 'strong'   ? '#22c55e' :
+    volumeData?.confirmation === 'moderate' ? '#3b82f6' :
+    volumeData?.confirmation === 'weak'     ? '#ef4444' : '#7a8499';
 
   return (
     <div className="live-indicators">
@@ -312,6 +354,24 @@ function IndicatorsBar({ indicators, currentPrice, cot }) {
             <span className="live-ind__label">COT (Smart Money)</span>
             <span className="live-ind__value" style={{ color: '#4a5568' }}>Unavailable</span>
             <span className="live-ind__sub">No data this pair</span>
+          </div>
+        )}
+        {volumeData?.available && (
+          <div className="live-ind">
+            <span className="live-ind__label">Volume</span>
+            <span className="live-ind__value" style={{ color: volColor }}>
+              {volumeData.ratio}x avg
+            </span>
+            <span className="live-ind__sub">{volumeData.confirmation}</span>
+          </div>
+        )}
+        {correlationData && (
+          <div className="live-ind" style={{ borderColor: correlationData.agreement ? undefined : 'rgba(239,68,68,0.4)' }}>
+            <span className="live-ind__label">Correlation</span>
+            <span className="live-ind__value" style={{ color: correlationData.agreement ? '#22c55e' : '#ef4444' }}>
+              {correlationData.pair}
+            </span>
+            <span className="live-ind__sub">{correlationData.agreement ? 'Agrees ✓' : 'Conflicts ⚠️'}</span>
           </div>
         )}
       </div>

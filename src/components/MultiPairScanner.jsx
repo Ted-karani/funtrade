@@ -1,9 +1,8 @@
 /**
- * MultiPairScanner.jsx
+ * MultiPairScanner.jsx — Level 1 upgrade
  *
- * Scans multiple pairs at once and ranks them by signal quality.
- * Shows you the best opportunity available right now across all pairs.
- * One click — full market overview.
+ * Now scans Forex + Gold + Silver + Crypto.
+ * Shows weekly bias alignment, volume confirmation, and COT in each result.
  */
 
 import { useState } from 'react';
@@ -12,14 +11,26 @@ import { evaluateBibleAnalysis } from '../lib/bibleRules.js';
 import { calculateConfidence } from '../lib/confidenceEngine.js';
 import { getSessionStatus } from '../lib/sessionClock.js';
 import { fetchNewsEvents, filterUpcomingEvents, PAIR_CURRENCIES } from '../lib/newsUtils.js';
+import { getCOTBiasForPair } from '../lib/cotData.js';
 import { isApiKeySet } from '../lib/twelveDataAPI.js';
 import './MultiPairScanner.css';
 
-const SCAN_PAIRS = [
-  'EUR/USD', 'GBP/USD', 'USD/JPY',
-  'USD/CHF', 'USD/CAD', 'AUD/USD',
-  'NZD/USD', 'EUR/JPY', 'GBP/JPY',
-];
+const SCAN_GROUPS = {
+  forex: {
+    label: 'Forex',
+    pairs: ['EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CHF', 'USD/CAD', 'AUD/USD', 'NZD/USD', 'EUR/JPY', 'GBP/JPY'],
+  },
+  metal: {
+    label: 'Metals',
+    pairs: ['XAU/USD', 'XAG/USD'],
+  },
+  crypto: {
+    label: 'Crypto',
+    pairs: ['BTC/USD', 'ETH/USD'],
+  },
+};
+
+const ALL_PAIRS = [...SCAN_GROUPS.forex.pairs, ...SCAN_GROUPS.metal.pairs, ...SCAN_GROUPS.crypto.pairs];
 
 const DECISION_COLOR = {
   BUY:      '#22c55e',
@@ -33,18 +44,41 @@ const DECISION_BG = {
   STAY_OUT: 'transparent',
 };
 
+const GROUP_FOR_PAIR = (() => {
+  const map = {};
+  for (const [group, data] of Object.entries(SCAN_GROUPS)) {
+    for (const p of data.pairs) map[p] = group;
+  }
+  return map;
+})();
+
 export default function MultiPairScanner({ onSelectPair }) {
-  const [scanning,  setScanning ] = useState(false);
-  const [results,   setResults  ] = useState([]);
-  const [timeframe, setTimeframe] = useState('H4');
-  const [error,     setError    ] = useState(null);
-  const [lastScan,  setLastScan ] = useState(null);
+  const [scanning,    setScanning   ] = useState(false);
+  const [results,     setResults    ] = useState([]);
+  const [timeframe,   setTimeframe  ] = useState('H4');
+  const [error,       setError      ] = useState(null);
+  const [lastScan,    setLastScan   ] = useState(null);
+  const [activeGroups, setActiveGroups] = useState({ forex: true, metal: true, crypto: true });
 
   const apiReady = isApiKeySet();
+
+  const toggleGroup = (group) => {
+    setActiveGroups((prev) => ({ ...prev, [group]: !prev[group] }));
+  };
+
+  const getScanList = () => {
+    return ALL_PAIRS.filter((p) => activeGroups[GROUP_FOR_PAIR[p]]);
+  };
 
   const scan = async () => {
     if (!apiReady) {
       setError('API key not set. Open twelveDataAPI.js and add your key.');
+      return;
+    }
+
+    const scanList = getScanList();
+    if (scanList.length === 0) {
+      setError('Select at least one asset group to scan.');
       return;
     }
 
@@ -54,56 +88,67 @@ export default function MultiPairScanner({ onSelectPair }) {
 
     const sessionStatus = getSessionStatus();
 
-    // Fetch news once for all pairs
     let allNewsEvents = [];
     try {
       allNewsEvents = await fetchNewsEvents();
     } catch { /* ignore */ }
 
-    // Analyze each pair — sequential to respect API rate limits
     const scanResults = [];
 
-    for (const pair of SCAN_PAIRS) {
+    for (const pair of scanList) {
       try {
         const analysis = await analyzeMarketData(pair, timeframe);
         const result   = evaluateBibleAnalysis(analysis);
 
-        // News check for this pair
         const pairClean  = pair.replace('/', '');
         const currencies = PAIR_CURRENCIES[pairClean] || ['USD'];
         const newsEvents = filterUpcomingEvents(allNewsEvents, currencies, new Date(), 2);
         const hasNews    = newsEvents.length > 0;
 
-        // Confidence score
+        // COT — only meaningful for forex pairs
+        let cot = null;
+        if (GROUP_FOR_PAIR[pair] === 'forex') {
+          try {
+            cot = await getCOTBiasForPair(pair);
+          } catch { cot = null; }
+        }
+
         const confidence = calculateConfidence({
           analysis,
-          bibleResult:   result,
-          indicators:    analysis.indicators,
+          bibleResult: result,
+          indicators:  analysis.indicators,
           sessionStatus,
-          hasNewsRisk:   hasNews,
+          hasNewsRisk: hasNews,
+          cot,
         });
 
         scanResults.push({
           pair,
-          decision:    result.decision,
+          group:         GROUP_FOR_PAIR[pair],
+          decision:      result.decision,
           confidence,
-          structure:   analysis.marketStructure,
-          patterns:    analysis.patterns,
+          structure:     analysis.marketStructure,
+          patterns:      analysis.patterns,
           signalQuality: analysis.signalQuality,
           nearSupport:   analysis.nearSupport,
           nearResistance: analysis.nearResistance,
           currentPrice:  analysis.currentPrice,
           hasNews,
           newsEvents,
-          emaTrend:    analysis.indicators?.emaTrend,
-          fibAtLevel:  analysis.indicators?.fibResult?.atFib,
+          emaTrend:      analysis.indicators?.emaTrend,
+          fibAtLevel:    analysis.indicators?.fibResult?.atFib,
+          weeklyBias:    analysis.weeklyBias,
+          weeklyAlignment: analysis.weeklyAlignment,
+          volumeData:    analysis.volumeData,
+          correlationData: analysis.correlationData,
+          cot,
         });
 
-        // Small delay to avoid hitting rate limits
         await new Promise((r) => setTimeout(r, 300));
       } catch (err) {
         scanResults.push({
           pair,
+          group:      GROUP_FOR_PAIR[pair],
           decision:   'ERROR',
           confidence: { score: 0, color: '#4a5568', label: 'Error' },
           error:      err.message,
@@ -111,7 +156,6 @@ export default function MultiPairScanner({ onSelectPair }) {
       }
     }
 
-    // Sort: actionable signals first (BUY/SELL), then by confidence score
     scanResults.sort((a, b) => {
       const aAction = a.decision !== 'STAY_OUT' && a.decision !== 'ERROR';
       const bAction = b.decision !== 'STAY_OUT' && b.decision !== 'ERROR';
@@ -128,15 +172,30 @@ export default function MultiPairScanner({ onSelectPair }) {
   const actionable = results.filter((r) => r.decision === 'BUY' || r.decision === 'SELL');
   const standby    = results.filter((r) => r.decision === 'STAY_OUT');
   const errors     = results.filter((r) => r.decision === 'ERROR');
+  const scanList   = getScanList();
 
   return (
     <div className="scanner">
       <div className="scanner__header">
-        <div className="scanner__title">🔍 Multi-Pair Scanner</div>
+        <div className="scanner__title">🔍 Multi-Asset Scanner</div>
         <p className="scanner__desc">
-          Scans {SCAN_PAIRS.length} pairs simultaneously and ranks by signal quality.
-          Find the best setup available right now.
+          Scans Forex, Gold, Silver, and Crypto simultaneously and ranks by signal quality.
+          Find the best setup available right now across every market.
         </p>
+      </div>
+
+      {/* Asset group toggles */}
+      <div className="scanner__groups">
+        {Object.entries(SCAN_GROUPS).map(([key, data]) => (
+          <button
+            key={key}
+            type="button"
+            className={`scanner__group-btn ${activeGroups[key] ? 'scanner__group-btn--active' : ''}`}
+            onClick={() => toggleGroup(key)}
+          >
+            {key === 'metal' ? '🥇' : key === 'crypto' ? '₿' : ''} {data.label} ({data.pairs.length})
+          </button>
+        ))}
       </div>
 
       {/* Controls */}
@@ -159,10 +218,10 @@ export default function MultiPairScanner({ onSelectPair }) {
           type="button"
           className="btn btn-analyze scanner__scan-btn"
           onClick={scan}
-          disabled={scanning || !apiReady}
+          disabled={scanning || !apiReady || scanList.length === 0}
         >
           {scanning && <span className="spinner" />}
-          {scanning ? `Scanning pairs… (${results.length}/${SCAN_PAIRS.length})` : `Scan All ${SCAN_PAIRS.length} Pairs`}
+          {scanning ? `Scanning… (${results.length}/${scanList.length})` : `Scan ${scanList.length} Assets`}
         </button>
       </div>
 
@@ -183,7 +242,6 @@ export default function MultiPairScanner({ onSelectPair }) {
       {/* Results */}
       {results.length > 0 && (
         <>
-          {/* Actionable signals */}
           {actionable.length > 0 && (
             <div className="scanner__section">
               <div className="scanner__section-title">
@@ -197,15 +255,14 @@ export default function MultiPairScanner({ onSelectPair }) {
 
           {actionable.length === 0 && (
             <div className="scanner__no-signals">
-              No actionable signals across all {SCAN_PAIRS.length} pairs on {timeframe}.
+              No actionable signals across {scanList.length} assets on {timeframe}.
               Market may be consolidating — wait for clearer setups.
             </div>
           )}
 
-          {/* Standby pairs */}
           {standby.length > 0 && (
             <details className="scanner__standby">
-              <summary>Stay Out pairs ({standby.length})</summary>
+              <summary>Stay Out assets ({standby.length})</summary>
               <div className="scanner__standby-list">
                 {standby.map((r) => (
                   <ScanResult key={r.pair} result={r} onSelect={onSelectPair} compact />
@@ -214,7 +271,6 @@ export default function MultiPairScanner({ onSelectPair }) {
             </details>
           )}
 
-          {/* Errors */}
           {errors.length > 0 && (
             <div className="scanner__errors">
               Failed to fetch: {errors.map((e) => e.pair).join(', ')}
@@ -230,19 +286,21 @@ export default function MultiPairScanner({ onSelectPair }) {
 
 function ScanResult({ result, onSelect, compact = false }) {
   const {
-    pair, decision, confidence, structure,
+    pair, group, decision, confidence, structure,
     patterns, signalQuality, currentPrice,
     hasNews, emaTrend, fibAtLevel, error,
+    weeklyBias, weeklyAlignment, volumeData, correlationData, cot,
   } = result;
 
   const isAction = decision === 'BUY' || decision === 'SELL';
   const decColor = DECISION_COLOR[decision] || '#7a8499';
   const decBg    = DECISION_BG[decision]    || 'transparent';
+  const groupIcon = group === 'metal' ? '🥇 ' : group === 'crypto' ? '₿ ' : '';
 
   if (error) {
     return (
       <div className="scan-result scan-result--error">
-        <span className="scan-result__pair">{pair}</span>
+        <span className="scan-result__pair">{groupIcon}{pair}</span>
         <span className="scan-result__error">Failed to load</span>
       </div>
     );
@@ -251,7 +309,7 @@ function ScanResult({ result, onSelect, compact = false }) {
   if (compact) {
     return (
       <div className="scan-result scan-result--compact">
-        <span className="scan-result__pair">{pair}</span>
+        <span className="scan-result__pair">{groupIcon}{pair}</span>
         <span className="scan-result__structure">{structure}</span>
         <span className="scan-result__conf" style={{ color: confidence.color }}>
           {confidence.score}%
@@ -270,9 +328,9 @@ function ScanResult({ result, onSelect, compact = false }) {
     >
       <div className="scan-result__top">
         <div className="scan-result__left">
-          <span className="scan-result__pair">{pair}</span>
+          <span className="scan-result__pair">{groupIcon}{pair}</span>
           <span className="scan-result__price">
-            {currentPrice?.toFixed(5) || '—'}
+            {currentPrice?.toFixed(currentPrice > 100 ? 2 : 5) || '—'}
           </span>
         </div>
         <div className="scan-result__right">
@@ -295,6 +353,16 @@ function ScanResult({ result, onSelect, compact = false }) {
         />
       </div>
 
+      {/* Weekly bias alert — most important new tag */}
+      {weeklyBias?.bias !== 'neutral' && weeklyAlignment && (
+        <div
+          className="scan-result__weekly"
+          style={{ color: weeklyAlignment.aligned ? '#22c55e' : '#ef4444' }}
+        >
+          📅 Weekly {weeklyBias.bias} — {weeklyAlignment.aligned ? 'aligned ✓' : 'conflicting ⚠️'}
+        </div>
+      )}
+
       <div className="scan-result__tags">
         <span className="scan-result__tag">{structure}</span>
         {emaTrend && emaTrend !== 'neutral' && (
@@ -304,6 +372,20 @@ function ScanResult({ result, onSelect, compact = false }) {
         )}
         {fibAtLevel && (
           <span className="scan-result__tag" style={{ color: '#f0b429' }}>Fib level ✓</span>
+        )}
+        {volumeData?.available && volumeData.confirmation === 'strong' && (
+          <span className="scan-result__tag" style={{ color: '#22c55e' }}>High volume ✓</span>
+        )}
+        {volumeData?.available && volumeData.confirmation === 'weak' && (
+          <span className="scan-result__tag" style={{ color: '#f97316' }}>Low volume</span>
+        )}
+        {cot?.available && cot.bias !== 'neutral' && (
+          <span className="scan-result__tag" style={{ color: cot.bias === 'bullish' ? '#22c55e' : '#ef4444' }}>
+            COT {cot.bias}
+          </span>
+        )}
+        {correlationData && !correlationData.agreement && (
+          <span className="scan-result__tag scan-result__tag--news">⚠️ Correlation conflict</span>
         )}
         {patterns.slice(0, 2).map((p) => (
           <span key={p} className="scan-result__tag">
@@ -319,7 +401,7 @@ function ScanResult({ result, onSelect, compact = false }) {
         <button
           type="button"
           className="scan-result__select-btn"
-          onClick={() => onSelect(pair.replace('/', ''), decision)}
+          onClick={() => onSelect(pair, decision)}
         >
           Analyze {pair} in detail →
         </button>

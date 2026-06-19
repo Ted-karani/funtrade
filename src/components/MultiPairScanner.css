@@ -287,3 +287,41 @@
   color: #ef4444;
   font-style: italic;
 }
+
+/* Asset group toggles (Level 1) */
+.scanner__groups {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.scanner__group-btn {
+  background: #111318;
+  border: 1px solid #1e2530;
+  border-radius: 8px;
+  color: #4a5568;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  opacity: 0.5;
+}
+
+.scanner__group-btn:hover {
+  opacity: 0.8;
+}
+
+.scanner__group-btn--active {
+  border-color: #f0b429;
+  color: #f0b429;
+  background: rgba(240,180,41,0.08);
+  opacity: 1;
+}
+
+/* Weekly bias tag in scan result */
+.scan-result__weekly {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 0;
+}
