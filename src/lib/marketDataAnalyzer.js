@@ -69,7 +69,8 @@ export const CORRELATIONS = {
 
 // ── Main analysis function ────────────────────────────────────────────────────
 
-export async function analyzeMarketData(symbol, timeframe) {
+export async function analyzeMarketData(symbol, timeframe, options = {}) {
+  const { skipCorrelation = false } = options;
   const clean  = symbol.replace('/', '').toUpperCase();
   const config = ASSET_CONFIG[clean] || { type: 'forex', pipSize: 0.0001, pipValue: 10, precision: 5 };
 
@@ -140,38 +141,39 @@ export async function analyzeMarketData(symbol, timeframe) {
     } catch { /* silent — weekly bias is bonus, not required */ }
   }
 
-  // ── Correlation check (NEW) ──────────────────────────────────────────────
+  // ── Correlation check (skipped during scanner to save API calls) ──────────
   let correlationData = null;
-  const corrConfig = CORRELATIONS[clean];
-  if (corrConfig) {
-    try {
-      const corrCandles = await fetchCandles(corrConfig.pair, timeframe, 10);
-      if (corrCandles) {
-        const corrPatterns  = detectCandlePatterns(corrCandles);
-        const corrStructure = detectStructureFromCandles(corrCandles, findSwings(corrCandles, 5));
-        const corrEMAs      = calcAllEMAs(corrCandles);
-        const corrTrend     = getEMATrend(corrCandles, corrEMAs);
+  if (!skipCorrelation) {
+    const corrConfig = CORRELATIONS[clean];
+    if (corrConfig) {
+      try {
+        const corrCandles = await fetchCandles(corrConfig.pair, timeframe, 10);
+        if (corrCandles) {
+          const corrPatterns  = detectCandlePatterns(corrCandles);
+          const corrStructure = detectStructureFromCandles(corrCandles, findSwings(corrCandles, 5));
+          const corrEMAs      = calcAllEMAs(corrCandles);
+          const corrTrend     = getEMATrend(corrCandles, corrEMAs);
 
-        // Check if correlated pair agrees or disagrees
-        const primaryBullish = structure === 'uptrend' || emaTrend === 'bullish';
-        const corrBullish    = corrStructure.structure === 'uptrend' || corrTrend === 'bullish';
+          const primaryBullish = structure === 'uptrend' || emaTrend === 'bullish';
+          const corrBullish    = corrStructure.structure === 'uptrend' || corrTrend === 'bullish';
 
-        const agreement = corrConfig.expectedRelation === 'positive'
-          ? primaryBullish === corrBullish
-          : primaryBullish !== corrBullish;
+          const agreement = corrConfig.expectedRelation === 'positive'
+            ? primaryBullish === corrBullish
+            : primaryBullish !== corrBullish;
 
-        correlationData = {
-          pair:        corrConfig.pair,
-          relation:    corrConfig.expectedRelation,
-          agreement,
-          corrTrend,
-          corrStructure: corrStructure.structure,
-          warning: !agreement
-            ? `⚠️ ${corrConfig.pair} is showing opposite direction — correlation conflict, reduce confidence`
-            : `${corrConfig.pair} agrees with this signal — correlation confirmed ✓`,
-        };
-      }
-    } catch { /* silent */ }
+          correlationData = {
+            pair:          corrConfig.pair,
+            relation:      corrConfig.expectedRelation,
+            agreement,
+            corrTrend,
+            corrStructure: corrStructure.structure,
+            warning: !agreement
+              ? `⚠️ ${corrConfig.pair} is showing opposite direction — correlation conflict, reduce confidence`
+              : `${corrConfig.pair} agrees with this signal — correlation confirmed ✓`,
+          };
+        }
+      } catch { /* silent */ }
+    }
   }
 
   // ── Confluence score 0–10 ────────────────────────────────────────────────
