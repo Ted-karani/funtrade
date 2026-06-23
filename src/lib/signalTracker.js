@@ -1,47 +1,25 @@
 /**
- * signalTracker.js
+ * signalTracker.js — Supabase version
  *
- * Automatically tracks signal outcomes.
- * When the app gives BUY/SELL, it saves the signal then monitors
- * every 5 minutes to detect if price hit TP or SL.
+ * Replaces localStorage with Supabase for permanent signal storage.
+ * Every BUY/SELL signal is saved to the 'signals' table.
+ * Python script on Render monitors outcomes every 5 minutes 24/7.
  *
- * This builds the dataset needed for Level 2 machine learning.
- * Runs silently in the background — you don't need to do anything.
- *
- * Storage: localStorage (migrates to Supabase in Level 2)
+ * Falls back to localStorage if Supabase is unavailable.
  */
 
-import { fetchCandles } from './twelveDataAPI.js';
+import { createClient } from '@supabase/supabase-js';
 
-const STORAGE_KEY  = 'cba-signal-tracker';
-const MAX_SIGNALS  = 500;
-const CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
-const EXPIRE_HOURS = 48; // auto-expire signals after 48 hours
+const SUPABASE_URL = 'https://nsuuhabeygoxjxslxyat.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zdXVoYWJleWdveGp4c2x4eWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNjE2NDYsImV4cCI6MjA5NzczNzY0Nn0.WGpFFnzdM8ZyBqmP3RkvIwK4sBLszWoqlVbJMo2lrLI';
 
-// ── Storage helpers ───────────────────────────────────────────────────────────
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-function loadSignals() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveSignals(signals) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(signals.slice(0, MAX_SIGNALS)));
-  } catch { /* silent */ }
-}
+const LOCAL_KEY = 'cba-signal-tracker';
 
 // ── Save a new signal ─────────────────────────────────────────────────────────
 
-/**
- * Save a signal when the app gives BUY or SELL.
- * Called automatically from runAnalysis.js.
- */
-export function trackSignal({
+export async function trackSignal({
   symbol, timeframe, decision,
   entryPrice, suggestedSL, suggestedTP,
   confidence, confluenceScore,
@@ -49,87 +27,159 @@ export function trackSignal({
   marketStructure, choppyScore,
   emaTrend, fibAtLevel,
   weeklyBias, cotBias,
-  volumeConfirmation,
-  sessionWindow,
-  hasNewsRisk,
-  correlationAgreement,
+  volumeConfirmation, sessionWindow,
+  hasNewsRisk, correlationAgreement,
 }) {
-  const signals = loadSignals();
-
   const signal = {
-    id:        crypto.randomUUID(),
-    timestamp: Date.now(),
     symbol,
     timeframe,
     decision,
-    entryPrice,
-    suggestedSL,
-    suggestedTP,
-
-    // All factors at signal time — used for learning later
-    factors: {
-      confidence,
-      confluenceScore,
-      patterns,
-      signalQuality,
-      marketStructure,
-      choppyScore,
-      emaTrend,
-      fibAtLevel,
-      weeklyBias,
-      cotBias,
-      volumeConfirmation,
-      sessionWindow,
-      hasNewsRisk,
-      correlationAgreement,
-    },
-
-    // Outcome — filled in by the monitor
-    outcome: 'pending', // pending | win | loss | expired | breakeven
-    outcomePrice:    null,
-    outcomeTime:     null,
-    pipsMoved:       null,
-    pipsResult:      null, // positive = won, negative = lost
-    monitoringActive: true,
+    entry_price:           entryPrice,
+    suggested_sl:          suggestedSL,
+    suggested_tp:          suggestedTP,
+    source:                'manual',
+    confidence,
+    confluence_score:      confluenceScore,
+    market_structure:      marketStructure,
+    choppy_score:          choppyScore,
+    signal_quality:        signalQuality,
+    patterns:              patterns || [],
+    ema_trend:             emaTrend,
+    fib_at_level:          fibAtLevel || false,
+    weekly_bias:           weeklyBias,
+    cot_bias:              cotBias,
+    volume_confirmation:   volumeConfirmation,
+    session_window:        sessionWindow,
+    has_news_risk:         hasNewsRisk || false,
+    correlation_agreement: correlationAgreement,
+    outcome:               'pending',
+    monitoring_active:     true,
   };
 
-  signals.unshift(signal);
-  saveSignals(signals);
-  return signal.id;
+  try {
+    const { data, error } = await supabase
+      .from('signals')
+      .insert([signal])
+      .select()
+      .single();
+    if (error) throw error;
+    return data?.id || null;
+  } catch (err) {
+    console.warn('Supabase signal save failed, falling back to localStorage:', err.message);
+    saveToLocalStorage(signal);
+    return null;
+  }
 }
 
-// ── Monitor pending signals ───────────────────────────────────────────────────
+// ── Get stats ─────────────────────────────────────────────────────────────────
+
+export async function getSignalStats() {
+  try {
+    // Try pre-calculated stats first (written by Python weekly)
+    const { data: cached } = await supabase
+      .from('performance_stats')
+      .select('*')
+      .eq('period', 'all_time')
+      .order('calculated_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (cached) {
+      return {
+        fromCache:    true,
+        calculatedAt: cached.calculated_at,
+        total:        cached.total_signals,
+        completed:    cached.completed,
+        wins:         cached.wins,
+        losses:       cached.losses,
+        winRate:      cached.win_rate,
+        avgWinPips:   cached.avg_win_pips,
+        avgLossPips:  cached.avg_loss_pips,
+        totalR:       cached.total_r,
+        byPair:       cached.by_pair        || {},
+        byPattern:    cached.by_pattern     || {},
+        bySession:    cached.by_session     || {},
+        byConfidence: cached.by_confidence  || {},
+        byWeeklyBias: cached.by_weekly_bias || {},
+      };
+    }
+  } catch { /* no cached stats yet */ }
+
+  // Calculate live
+  try {
+    const { data: signals, error } = await supabase
+      .from('signals')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return calculateStats(signals || []);
+  } catch (err) {
+    console.warn('Supabase stats fetch failed, using localStorage:', err.message);
+    return getLocalStorageStats();
+  }
+}
+
+export async function getAllSignals() {
+  try {
+    const { data, error } = await supabase
+      .from('signals')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(500);
+    if (error) throw error;
+    return data || [];
+  } catch {
+    return getLocalFallback();
+  }
+}
+
+export async function getLatestScannerResults(limit = 20) {
+  try {
+    const { data, error } = await supabase
+      .from('scanner_results')
+      .select('*')
+      .order('scanned_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return data || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getLastScanTime() {
+  try {
+    const { data } = await supabase
+      .from('app_config')
+      .select('value')
+      .eq('key', 'last_python_scan')
+      .single();
+    if (!data || data.value === 'null') return null;
+    return new Date(data.value.replace(/"/g, ''));
+  } catch {
+    return null;
+  }
+}
+
+export async function clearSignals() {
+  try {
+    await supabase.from('signals').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    localStorage.removeItem(LOCAL_KEY);
+  } catch (err) {
+    console.warn('Clear failed:', err.message);
+  }
+}
+
+// ── Browser monitor (lightweight backup — Python is the real monitor) ─────────
 
 let monitorInterval = null;
 
-/**
- * Start the background monitor.
- * Checks all pending signals every 5 minutes.
- * Call once when the app loads.
- */
 export function startSignalMonitor() {
-  if (monitorInterval) return; // already running
-
-  const check = async () => {
-    const signals = loadSignals();
-    const pending = signals.filter((s) => s.outcome === 'pending' && s.monitoringActive);
-
-    if (pending.length === 0) return;
-
-    for (const signal of pending) {
-      try {
-        await checkSignalOutcome(signal, signals);
-      } catch { /* silent — don't break monitor */ }
-      // Small delay between checks to avoid rate limits
-      await new Promise((r) => setTimeout(r, 500));
-    }
-
-    saveSignals(signals);
-  };
-
-  // Check immediately on start, then every 5 minutes
-  check();
-  monitorInterval = setInterval(check, CHECK_INTERVAL);
+  if (monitorInterval) return;
+  // Just keeps UI stats fresh — Python on Render does the real 5-min monitoring
+  monitorInterval = setInterval(async () => {
+    try { await getSignalStats(); } catch { /* silent */ }
+  }, 15 * 60 * 1000);
 }
 
 export function stopSignalMonitor() {
@@ -139,164 +189,62 @@ export function stopSignalMonitor() {
   }
 }
 
-/**
- * Check if a signal hit its TP, SL, or expired.
- * Mutates the signal object directly.
- */
-async function checkSignalOutcome(signal, allSignals) {
-  const now = Date.now();
+// ── Stats calculation ─────────────────────────────────────────────────────────
 
-  // Auto-expire after 48 hours
-  if (now - signal.timestamp > EXPIRE_HOURS * 60 * 60 * 1000) {
-    signal.outcome          = 'expired';
-    signal.monitoringActive = false;
-    signal.outcomeTime      = now;
-    return;
-  }
-
-  // Fetch latest candle
-  const candles = await fetchCandles(signal.symbol, signal.timeframe, 5);
-  if (!candles || candles.length === 0) return;
-
-  const currentPrice = candles[0].close;
-  const high         = candles[0].high;
-  const low          = candles[0].low;
-
-  const { decision, entryPrice, suggestedSL, suggestedTP } = signal;
-
-  // Calculate pip size
-  const pipSize = getPipSize(signal.symbol);
-  const pipsMoved = decision === 'BUY'
-    ? (currentPrice - entryPrice) / pipSize
-    : (entryPrice - currentPrice) / pipSize;
-
-  signal.pipsMoved = parseFloat(pipsMoved.toFixed(1));
-
-  if (!suggestedSL && !suggestedTP) {
-    // No SL/TP set — just track direction
-    if (now - signal.timestamp > 24 * 60 * 60 * 1000) {
-      signal.outcome          = pipsMoved > 0 ? 'win' : 'loss';
-      signal.monitoringActive = false;
-      signal.outcomeTime      = now;
-      signal.pipsResult       = signal.pipsMoved;
-    }
-    return;
-  }
-
-  // Check TP hit
-  if (suggestedTP) {
-    const tpHit = decision === 'BUY'
-      ? high >= suggestedTP
-      : low  <= suggestedTP;
-
-    if (tpHit) {
-      signal.outcome          = 'win';
-      signal.monitoringActive = false;
-      signal.outcomePrice     = suggestedTP;
-      signal.outcomeTime      = now;
-      signal.pipsResult       = Math.abs(suggestedTP - entryPrice) / pipSize;
-      return;
-    }
-  }
-
-  // Check SL hit
-  if (suggestedSL) {
-    const slHit = decision === 'BUY'
-      ? low  <= suggestedSL
-      : high >= suggestedSL;
-
-    if (slHit) {
-      signal.outcome          = 'loss';
-      signal.monitoringActive = false;
-      signal.outcomePrice     = suggestedSL;
-      signal.outcomeTime      = now;
-      signal.pipsResult       = -Math.abs(entryPrice - suggestedSL) / pipSize;
-      return;
-    }
-  }
-}
-
-// ── Statistics ────────────────────────────────────────────────────────────────
-
-/**
- * Calculate win rate and other stats from completed signals.
- * This is what feeds Level 2 machine learning.
- */
-export function getSignalStats() {
-  const signals   = loadSignals();
-  const completed = signals.filter((s) => s.outcome !== 'pending' && s.outcome !== 'expired');
-  const wins      = completed.filter((s) => s.outcome === 'win');
-  const losses    = completed.filter((s) => s.outcome === 'loss');
+function calculateStats(signals) {
+  const completed  = signals.filter((s) => s.outcome !== 'pending' && s.outcome !== 'expired');
+  const pending    = signals.filter((s) => s.outcome === 'pending');
+  const wins       = completed.filter((s) => s.outcome === 'win');
+  const losses     = completed.filter((s) => s.outcome === 'loss');
 
   if (completed.length === 0) {
     return {
-      total: signals.length,
-      completed: 0,
-      pending: signals.filter((s) => s.outcome === 'pending').length,
-      winRate: null,
-      avgWinPips: null,
-      avgLossPips: null,
-      byPair: {},
-      byPattern: {},
-      bySession: {},
-      byConfidence: {},
-      byWeeklyBias: {},
+      total: signals.length, completed: 0, pending: pending.length,
+      wins: 0, losses: 0, winRate: null, avgWinPips: null,
+      avgLossPips: null, totalR: null,
+      byPair: {}, byPattern: {}, bySession: {},
+      byConfidence: {}, byWeeklyBias: { aligned: [], conflicting: [] },
     };
   }
 
-  const winRate    = wins.length / completed.length;
+  const winRate    = parseFloat(((wins.length / completed.length) * 100).toFixed(1));
   const avgWinPips = wins.length > 0
-    ? wins.reduce((s, w) => s + (w.pipsResult || 0), 0) / wins.length : 0;
+    ? parseFloat((wins.reduce((s, w) => s + (w.pips_result || 0), 0) / wins.length).toFixed(1)) : 0;
   const avgLossPips = losses.length > 0
-    ? losses.reduce((s, l) => s + Math.abs(l.pipsResult || 0), 0) / losses.length : 0;
-
-  // Win rate by pair
-  const byPair = groupStats(completed, (s) => s.symbol);
-
-  // Win rate by pattern
-  const byPattern = groupStatsByPattern(completed);
-
-  // Win rate by session
-  const bySession = groupStats(completed, (s) => s.factors?.sessionWindow || 'unknown');
-
-  // Win rate by confidence band
-  const byConfidence = {
-    '80-100': calcBandStats(completed, 80, 100),
-    '65-79':  calcBandStats(completed, 65, 79),
-    '50-64':  calcBandStats(completed, 50, 64),
-    '<50':    calcBandStats(completed, 0,  49),
-  };
-
-  // Win rate when weekly bias aligned vs not
-  const byWeeklyBias = {
-    aligned:    completed.filter((s) => s.factors?.weeklyBias === 'aligned'),
-    conflicting: completed.filter((s) => s.factors?.weeklyBias === 'conflicting'),
-  };
+    ? parseFloat((losses.reduce((s, l) => s + Math.abs(l.pips_result || 0), 0) / losses.length).toFixed(1)) : 0;
 
   return {
-    total:     signals.length,
-    completed: completed.length,
-    pending:   signals.filter((s) => s.outcome === 'pending').length,
-    wins:      wins.length,
-    losses:    losses.length,
-    winRate:   parseFloat((winRate * 100).toFixed(1)),
-    avgWinPips:  parseFloat(avgWinPips.toFixed(1)),
-    avgLossPips: parseFloat(avgLossPips.toFixed(1)),
-    byPair,
-    byPattern,
-    bySession,
-    byConfidence,
-    byWeeklyBias,
+    total: signals.length, completed: completed.length,
+    pending: pending.length, wins: wins.length, losses: losses.length,
+    winRate, avgWinPips, avgLossPips,
+    totalR: parseFloat(completed.reduce((sum, s) => {
+      if (!s.pips_result || !s.suggested_sl) return sum;
+      const slDist = Math.abs(s.entry_price - s.suggested_sl);
+      return slDist > 0 ? sum + s.pips_result / slDist : sum;
+    }, 0).toFixed(2)),
+    byPair:       groupBy(completed, (s) => s.symbol),
+    byPattern:    groupByPattern(completed),
+    bySession:    groupBy(completed, (s) => s.session_window || 'unknown'),
+    byConfidence: {
+      '80-100': bandStats(completed, 80, 100),
+      '65-79':  bandStats(completed, 65, 79),
+      '50-64':  bandStats(completed, 50, 64),
+      '<50':    bandStats(completed, 0,  49),
+    },
+    byWeeklyBias: {
+      aligned:     completed.filter((s) => s.weekly_bias === 'aligned'),
+      conflicting: completed.filter((s) => s.weekly_bias === 'conflicting'),
+    },
   };
 }
 
-function groupStats(signals, keyFn) {
+function groupBy(signals, keyFn) {
   const groups = {};
-  for (const signal of signals) {
-    const key = keyFn(signal);
+  for (const s of signals) {
+    const key = keyFn(s);
     if (!groups[key]) groups[key] = { wins: 0, total: 0 };
     groups[key].total++;
-    if (signal.outcome === 'win') groups[key].wins++;
+    if (s.outcome === 'win') groups[key].wins++;
   }
   for (const key of Object.keys(groups)) {
     groups[key].winRate = parseFloat(((groups[key].wins / groups[key].total) * 100).toFixed(1));
@@ -304,14 +252,13 @@ function groupStats(signals, keyFn) {
   return groups;
 }
 
-function groupStatsByPattern(signals) {
+function groupByPattern(signals) {
   const groups = {};
-  for (const signal of signals) {
-    const patterns = signal.factors?.patterns || [];
-    for (const pat of patterns) {
+  for (const s of signals) {
+    for (const pat of (s.patterns || [])) {
       if (!groups[pat]) groups[pat] = { wins: 0, total: 0 };
       groups[pat].total++;
-      if (signal.outcome === 'win') groups[pat].wins++;
+      if (s.outcome === 'win') groups[pat].wins++;
     }
   }
   for (const key of Object.keys(groups)) {
@@ -320,35 +267,35 @@ function groupStatsByPattern(signals) {
   return groups;
 }
 
-function calcBandStats(signals, min, max) {
-  const band = signals.filter((s) => {
-    const conf = s.factors?.confidence || 0;
-    return conf >= min && conf <= max;
-  });
+function bandStats(signals, min, max) {
+  const band = signals.filter((s) => (s.confidence || 0) >= min && (s.confidence || 0) <= max);
   const wins = band.filter((s) => s.outcome === 'win');
   return {
-    total:   band.length,
-    wins:    wins.length,
+    total: band.length, wins: wins.length,
     winRate: band.length > 0 ? parseFloat(((wins.length / band.length) * 100).toFixed(1)) : null,
   };
 }
 
-export function getAllSignals() {
-  return loadSignals();
+function saveToLocalStorage(signal) {
+  try {
+    const existing = JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]');
+    existing.unshift({ ...signal, id: crypto.randomUUID(), timestamp: Date.now() });
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(existing.slice(0, 200)));
+  } catch { /* silent */ }
 }
 
-export function clearSignals() {
-  localStorage.removeItem(STORAGE_KEY);
+function getLocalFallback() {
+  try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); }
+  catch { return []; }
 }
 
-// ── Pip size helper ───────────────────────────────────────────────────────────
-
-function getPipSize(symbol) {
-  const clean = symbol.replace('/', '').toUpperCase();
-  if (clean.includes('JPY')) return 0.01;
-  if (clean.startsWith('XAU')) return 0.1;
-  if (clean.startsWith('BTC')) return 1;
-  if (clean.startsWith('ETH')) return 0.1;
-  if (clean.includes('30') || clean.includes('NAS') || clean.includes('SPX')) return 1;
-  return 0.0001;
+function getLocalStorageStats() {
+  return calculateStats(getLocalFallback().map((s) => ({
+    ...s, outcome: s.outcome || 'pending',
+    pips_result: s.pipsResult,
+    session_window: s.factors?.sessionWindow,
+    weekly_bias: s.factors?.weeklyBias,
+    patterns: s.factors?.patterns || [],
+    confidence: s.factors?.confidence,
+  })));
 }

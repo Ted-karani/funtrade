@@ -1,0 +1,13 @@
+services:
+  - type: worker
+    name: candlestick-scanner
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python scanner.py
+    envVars:
+      - key: SUPABASE_URL
+        value: https://nsuuhabeygoxjxslxyat.supabase.co
+      - key: SUPABASE_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zdXVoYWJleWdveGp4c2x4eWF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNjE2NDYsImV4cCI6MjA5NzczNzY0Nn0.WGpFFnzdM8ZyBqmP3RkvIwK4sBLszWoqlVbJMo2lrLI
+      - key: TWELVE_DATA_KEY
+        value: d906ea092c7e48d7a5c325a00c45dc18

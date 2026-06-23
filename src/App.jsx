@@ -11,7 +11,6 @@ import PairSelector from './components/PairSelector.jsx';
 import PreTradeChecklist from './components/PreTradeChecklist.jsx';
 import LiveAnalyzer from './components/LiveAnalyzer.jsx';
 import MultiPairScanner from './components/MultiPairScanner.jsx';
-import SignalPerformance from './components/SignalPerformance.jsx';
 import { saveHistoryEntry } from './lib/historyStorage.js';
 import { saveJournalEntry } from './lib/journalStorage.js';
 import { runFullAnalysis } from './lib/runAnalysis.js';
@@ -19,15 +18,14 @@ import { startSignalMonitor } from './lib/signalTracker.js';
 import './App.css';
 
 const TABS = [
-  { id: 'live',        label: '📡 Live'        },
-  { id: 'scanner',     label: '🔍 Scanner'     },
-  { id: 'performance', label: '📊 Performance' },
-  { id: 'analyze',     label: '📸 Screenshot'  },
-  { id: 'journal',     label: '📓 Journal'     },
-  { id: 'tools',       label: '🔧 Tools'       },
-  { id: 'guide',       label: '📖 Guide'       },
-  { id: 'rules',       label: '📋 Rules'       },
-  { id: 'history',     label: '🕐 History'     },
+  { id: 'live',    label: '📡 Live'       },
+  { id: 'scanner', label: '🔍 Scanner'    },
+  { id: 'analyze', label: '📸 Screenshot' },
+  { id: 'journal', label: '📓 Journal'    },
+  { id: 'tools',   label: '🔧 Tools'      },
+  { id: 'guide',   label: '📖 Guide'      },
+  { id: 'rules',   label: '📋 Rules'      },
+  { id: 'history', label: '🕐 History'    },
 ];
 
 const VALID_TABS = new Set(TABS.map((t) => t.id));
@@ -70,9 +68,7 @@ export default function App() {
   const isTimeframeBlocked = timeframeGroup === 'invalid';
   const isTimeframeUnset   = timeframe === null;
 
-  // ── Start signal monitor once when app loads (Level 1) ────────────────────
-  // This keeps the 5-min outcome tracker running as long as the app tab
-  // is open, regardless of which inner tab (Live, Scanner, etc) is active.
+  // Start signal monitor when app loads
   useEffect(() => {
     startSignalMonitor();
   }, []);
@@ -252,10 +248,6 @@ export default function App() {
         <MultiPairScanner onSelectPair={handleScannerSelect} />
       )}
 
-      {tab === 'performance' && (
-        <SignalPerformance />
-      )}
-
       {tab === 'analyze' && (
         <>
           <div className="screenshot-mode-banner">
@@ -361,11 +353,11 @@ export default function App() {
         </>
       )}
 
-      {tab === 'journal'  && <TradeJournal refreshKey={journalKey} />}
-      {tab === 'tools'    && <ToolsPanel onOpenGuide={() => goTab('guide')} />}
-      {tab === 'guide'    && <Mt5Guide />}
-      {tab === 'rules'    && <RulesReference />}
-      {tab === 'history'  && <HistoryPanel refreshKey={historyKey} onSelect={viewHistoryEntry} />}
+      {tab === 'journal' && <TradeJournal refreshKey={journalKey} />}
+      {tab === 'tools'   && <ToolsPanel onOpenGuide={() => goTab('guide')} />}
+      {tab === 'guide'   && <Mt5Guide />}
+      {tab === 'rules'   && <RulesReference />}
+      {tab === 'history' && <HistoryPanel refreshKey={historyKey} onSelect={viewHistoryEntry} />}
 
       <p className="disclaimer">
         Frontend only — no server. History stays in your browser. Real market data via Twelve Data API.
